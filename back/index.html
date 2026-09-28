@@ -1,0 +1,4311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bingo Caller - Enhanced Algorithm</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      text-align: center;
+      background: #000;
+      color: #fff;
+      padding: 8px;
+      margin: 0;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: background-color 0.5s ease;
+    }
+    
+    /* NEW: Audio Selector Button Styles */
+    #audio-selector-btn {
+      position: absolute;
+      top: 8px;
+      right: 44px; /* Positioned to the left of game limit button */
+      background: rgba(52, 152, 219, 0.9);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      font-size: 14px;
+      font-weight: bold;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+      z-index: 100;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      padding: 0;
+      line-height: 1;
+    }
+    
+    #audio-selector-btn:hover {
+      background: rgba(52, 152, 219, 1);
+      transform: scale(1.1);
+      box-shadow: 0 2px 6px rgba(52, 152, 219, 0.7);
+    }
+    
+    /* NEW: Audio Selection Modal Styles */
+    #audio-selector-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.95);
+      z-index: 2001;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    #audio-selector-content {
+      background: #1e1e1e;
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      font-size: 16px;
+      color: white;
+      text-align: center;
+      width: 400px;
+    }
+    
+    #audio-selector-content h3 {
+      margin-top: 0;
+      color: #3498db;
+      font-size: 20px;
+    }
+    
+    #audio-selector-options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 20px 0;
+    }
+    
+    .audio-option-btn {
+      background: linear-gradient(to bottom, #3498db, #2980b9);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 12px 15px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .audio-option-btn:hover {
+      background: linear-gradient(to bottom, #2980b9, #1a5276);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(52, 152, 219, 0.4);
+    }
+    
+    .audio-option-btn.selected {
+      background: linear-gradient(to bottom, #2ecc71, #27ae60);
+      box-shadow: 0 0 10px rgba(46, 204, 113, 0.7);
+    }
+    
+    .audio-option-name {
+      font-weight: bold;
+    }
+    
+    .audio-option-status {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+    
+    #audio-upload-section {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #444;
+    }
+    
+    #custom-audio-upload {
+      background: #2a2a2a;
+      color: white;
+      border: 1px dashed #555;
+      border-radius: 6px;
+      padding: 15px;
+      cursor: pointer;
+      margin: 10px 0;
+      transition: all 0.2s;
+    }
+    
+    #custom-audio-upload:hover {
+      border-color: #3498db;
+      background: #333;
+    }
+    
+    #custom-audio-input {
+      display: none;
+    }
+    
+    #current-audio-info {
+      background: rgba(52, 152, 219, 0.1);
+      padding: 10px;
+      border-radius: 6px;
+      margin-top: 15px;
+      font-size: 14px;
+    }
+    
+    #current-audio-info .audio-name {
+      color: #64ffda;
+      font-weight: bold;
+    }
+    
+    .main-ui {
+      display: none;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+    
+    .cost-info {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      z-index: 100;
+      cursor: default;
+    }
+    
+    /* UPDATED: Game Limit Button - Even smaller and positioned at top right */
+    #game-limit-btn-small {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(155, 89, 182, 0.9);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      font-size: 8px;
+      font-weight: bold;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+      z-index: 100;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      padding: 0;
+      line-height: 1;
+    }
+    
+    #game-limit-btn-small:hover {
+      background: rgba(155, 89, 182, 1);
+      transform: scale(1.1);
+      box-shadow: 0 2px 6px rgba(155, 89, 182, 0.7);
+    }
+    
+    .games-left-info {
+      position: absolute;
+      top: 72px;
+      left: 8px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #64ffda;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      z-index: 100;
+      cursor: default;
+    }
+    
+    .developer-info {
+      position: absolute;
+      top: 8px;
+      right: 86px; /* Adjusted for audio selector button */
+      background: rgba(0, 0, 0, 0.6);
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #64ffda;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      z-index: 100;
+    }
+    
+    h1 {
+      display: none;
+    }
+    #recent-numbers-display,
+    #called-display,
+    #reward-display,
+    #all-numbers-grid {
+      background: rgba(30, 30, 30, 0.9);
+      border-radius: 8px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.4);
+      backdrop-filter: blur(4px);
+    }
+    .display-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      margin: 12px auto;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+    #recent-numbers-display,
+    #reward-display {
+      width: 140px;
+      height: 140px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      border-radius: 12px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.4);
+      padding: 10px;
+    }
+    #recent-numbers-display {
+      background: rgba(30,30,30,0.95);
+      color: #4fc3f7;
+    }
+    #reward-display {
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+      color: white;
+      font-weight: bold;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+    
+    /* UPDATED: Recent numbers display with increased size and spacing */
+    #recent-list {
+      display: flex;
+      justify-content: center;
+      gap: 12px; /* Increased from 6px to 12px */
+      width: 100%;
+      margin-top: 8px;
+    }
+    .recent-badge {
+      width: 56px; /* Increased from 28px to 56px (doubled) */
+      height: 56px; /* Increased from 28px to 56px (doubled) */
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px; /* Increased from 10px to 20px */
+      font-weight: bold;
+      background: linear-gradient(to bottom, #3498db, #1a5276);
+      color: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    }
+    .recent-placeholder {
+      opacity: 0.2;
+      background: #444 !important;
+    }
+    
+    #called-display {
+      width: 110px;
+      height: 110px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      font-weight: 900;
+      color: white;
+      background: linear-gradient(135deg, #2980b9, #1a5276);
+      border-radius: 50%;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+      text-shadow: 0 2px 6px rgba(0,0,0,0.7);
+      letter-spacing: 1px;
+      animation: pop-in 0.4s ease-out;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+    }
+    @keyframes pop-in {
+      0% { transform: scale(0.8); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    #all-numbers-grid {
+      margin: 8px auto;
+      width: 98vw;
+      max-width: 1200px;
+      display: grid;
+      grid-template-columns: 60px repeat(15, 1fr);
+      gap: 3px;
+      padding: 8px;
+      background: rgba(20, 20, 20, 0.85);
+      border-radius: 10px;
+      flex: 1;
+      overflow: hidden;
+    }
+    .number-badge {
+      aspect-ratio: 1 / 1;
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: white;
+      background: #111;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      transition: all 0.25s ease;
+      min-width: 0;
+      padding: 2px;
+      position: relative;
+    }
+    .number-badge.called {
+      color: white;
+      box-shadow: 0 0 10px rgba(46, 204, 113, 0.9);
+      transform: scale(1.05);
+    }
+    
+    .number-badge.called.b-row {
+      background: linear-gradient(to bottom, #e74c3c, #c0392b) !important;
+    }
+    .number-badge.called.i-row {
+      background: linear-gradient(to bottom, #2ecc71, #27ae60) !important;
+    }
+    .number-badge.called.n-row {
+      background: linear-gradient(to bottom, #f1c40f, #f39c12) !important;
+    }
+    .number-badge.called.g-row {
+      background: linear-gradient(to bottom, #9b59b6, #8e44ad) !important;
+    }
+    .number-badge.called.o-row {
+      background: linear-gradient(to bottom, #3498db, #2980b9) !important;
+    }
+    
+    /* New styles for refresh animation */
+    .number-badge.refresh-blinking {
+      animation: refresh-blink 0.5s ease-in-out infinite;
+    }
+    
+    @keyframes refresh-blink {
+      0% { 
+        background: rgba(52, 152, 219, 0.3); 
+        box-shadow: 0 0 8px rgba(52, 152, 219, 0.7);
+      }
+      50% { 
+        background: rgba(52, 152, 219, 0.1); 
+        box-shadow: 0 0 4px rgba(52, 152, 219, 0.4);
+      }
+      100% { 
+        background: rgba(52, 152, 219, 0.3); 
+        box-shadow: 0 0 8px rgba(52, 152, 219, 0.7);
+      }
+    }
+    
+    .number-badge .number {
+      font-size: clamp(16px, 3.5vw, 24px);
+      line-height: 1;
+      font-weight: 900;
+    }
+    
+    .row-letter {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: clamp(24px, 4vw, 32px);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+      border-radius: 4px;
+      margin: 2px;
+    }
+    .row-letter.b {
+      color: #e74c3c;
+    }
+    .row-letter.i {
+      color: #2ecc71;
+    }
+    .row-letter.n {
+      color: #f1c40f;
+    }
+    .row-letter.g {
+      color: #9b59b6;
+    }
+    .row-letter.o {
+      color: #3498db;
+    }
+    
+    #main-action-buttons {
+      margin: 8px auto;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      max-width: 500px;
+      flex-shrink: 0;
+    }
+    #interval-control {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: bold;
+      background: rgba(30, 30, 30, 0.85);
+      padding: 6px 10px;
+      border-radius: 6px;
+    }
+    button, select, input {
+      margin: 3px;
+      padding: 5px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      border-radius: 4px;
+      border: none;
+      font-weight: bold;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      transition: all 0.15s;
+    }
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+    }
+    input {
+      width: 50px;
+      text-align: center;
+      border: 1px solid #555;
+      background: #222;
+      color: white;
+      font-size: 12px;
+    }
+    #status {
+      margin-top: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #ff5252;
+      min-height: 22px;
+      background: rgba(30, 30, 30, 0.85);
+      padding: 5px;
+      border-radius: 5px;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    #auto-btn {
+      background: linear-gradient(to bottom, #9b59b6, #8e44ad);
+      color: white;
+    }
+    #auto-btn.stop {
+      background: linear-gradient(to bottom, #e74c3c, #c0392b);
+      color: white;
+    }
+    #winner-display {
+      margin: 8px auto;
+      padding: 6px;
+      background: linear-gradient(to right, #2ecc71, #27ae60);
+      color: white;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: bold;
+      max-width: 500px;
+      display: none;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+      flex-shrink: 0;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    #speaking-indicator {
+      display: none;
+      color: #27ae60;
+      font-weight: bold;
+      margin-top: 5px;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+    #audio-file-info {
+      margin-top: 5px;
+      font-size: 10px;
+      color: #27ae60;
+      font-weight: bold;
+      display: none;
+      flex-shrink: 0;
+    }
+    
+    /* UPDATED: Floating menu button - Now visible */
+    #floating-menu-btn {
+      position: fixed;
+      bottom: 16px;
+      left: 16px;
+      background: #3498db;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+      font-size: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+      z-index: 1000;
+      cursor: pointer;
+      display: flex; /* Changed from 'none' to 'flex' */
+      align-items: center;
+      justify-content: center;
+    }
+    
+    /* UPDATED: Floating menu with white background */
+    #floating-menu {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #ffffff; /* Changed from #1e1e1e to white */
+      padding: 20px;
+      box-shadow: none;
+      z-index: 999;
+      display: none;
+      overflow-y: auto;
+      font-size: 16px;
+      color: #333; /* Changed from white to dark text */
+    }
+    
+    /* Ensure all text in floating menu is readable on white background */
+    #floating-menu * {
+      color: #333;
+    }
+    
+    #close-floating-menu {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .top-info-buttons {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .top-info-btn {
+      background: linear-gradient(to bottom, #3498db, #2980b9);
+      color: white;
+      border: none;
+      border-radius: 24px;
+      padding: 8px 14px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      min-width: 100px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+      transition: all 0.2s;
+    }
+    .top-info-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+    }
+    .big-play-btn {
+      background: linear-gradient(to bottom, #2ecc71, #27ae60);
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+      padding: 14px;
+      margin: 16px auto;
+      width: 90%;
+      max-width: 300px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .big-play-btn:hover {
+      transform: scale(1.03);
+      box-shadow: 0 6px 16px rgba(46, 204, 113, 0.6);
+    }
+    .menu-section {
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #ddd; /* Changed from #444 to lighter color */
+    }
+    .menu-section:last-child {
+      border-bottom: none;
+    }
+    .menu-section h3 {
+      margin: 0 0 12px;
+      color: #3498db;
+      font-size: 16px;
+    }
+    
+    /* UPDATED: Player list in floating menu to square boxes with red lines */
+    #player-list-float {
+      display: grid;
+      grid-template-columns: repeat(15, 1fr);
+      gap: 4px;
+      max-height: none;
+      overflow-y: visible;
+      padding: 6px;
+      background: #f5f5f5; /* Light background */
+      border-radius: 8px;
+      border: 2px solid #e74c3c; /* Red border around the grid */
+    }
+    
+    /* UPDATED: Change player circles to square boxes */
+    .player-circle {
+      width: 32px;
+      height: 32px;
+      border-radius: 4px; /* Changed from 50% to 4px for square boxes */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(to bottom, #3498db, #2980b9);
+      color: white;
+      font-weight: bold;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+      border: 1px solid #e74c3c; /* Red border for each box */
+    }
+    
+    .player-circle:hover {
+      transform: scale(1.05);
+      border-color: #2ecc71; /* Green border on hover */
+    }
+    
+    .player-circle.selected {
+      background: linear-gradient(to bottom, #2ecc71, #27ae60);
+      box-shadow: 0 2px 6px rgba(46, 204, 113, 0.6);
+      border-color: #27ae60;
+    }
+    
+    .button-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 8px;
+    }
+    .button-row button {
+      flex: 1;
+      min-width: 70px;
+      padding: 4px 6px;
+      font-size: 12px;
+      height: auto;
+      min-height: 26px;
+      color: #333; /* Dark text for buttons */
+    }
+    select, input {
+      width: 100%;
+      margin: 4px 0;
+      font-size: 14px;
+      background: #2a2a2a;
+      color: white;
+      border: 1px solid #555;
+    }
+    #payment-modal,
+    #reward-percent-modal,
+    #voice-install-modal,
+    #reward-modal,
+    #winning-rule-modal,
+    #game-cost-modal,
+    #voice-settings-modal,
+    #players-fullscreen-modal,
+    #speed-settings-modal,
+    #player-card-modal,
+    #manual-card-modal,
+    #themes-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.95);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+    }
+    #payment-modal-content,
+    #reward-percent-content,
+    #voice-install-content,
+    #reward-modal-content,
+    #winning-rule-content,
+    #game-cost-content,
+    #voice-settings-content,
+    #players-fullscreen-content,
+    #speed-settings-content,
+    #player-card-content,
+    #manual-card-content,
+    #themes-content {
+      background: #1e1e1e;
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      font-size: 16px;
+      color: white;
+      text-align: center;
+    }
+    #payment-options,
+    #reward-percent-options,
+    #speed-options,
+    #themes-options {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      gap: 6px !important;
+      justify-content: center;
+      margin: 16px 0;
+    }
+    .payment-option-btn,
+    .reward-percent-btn,
+    .speed-option-btn,
+    .theme-option-btn {
+      background: linear-gradient(to bottom, #2ecc71, #27ae60);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 4px 6px !important;
+      font-size: 12px !important;
+      cursor: pointer;
+      transition: transform 0.15s;
+      min-width: 60px !important;
+      flex: 1 1 auto !important;
+      max-width: 100px !important;
+    }
+    .payment-option-btn:hover,
+    .reward-percent-btn:hover,
+    .speed-option-btn:hover,
+    .theme-option-btn:hover {
+      transform: scale(1.05);
+    }
+    .speed-option-btn.selected {
+      background: linear-gradient(to bottom, #f39c12, #e67e22);
+      box-shadow: 0 0 10px rgba(243, 156, 18, 0.7);
+    }
+    #close-payment-modal,
+    #close-reward-percent-modal,
+    #close-modal,
+    #close-reward-modal,
+    #close-winning-rule-modal,
+    #close-game-cost-modal,
+    #close-voice-settings-modal,
+    #close-players-fullscreen-modal,
+    #close-speed-settings-modal,
+    #close-player-card-modal,
+    #close-manual-card-modal,
+    #close-themes-modal {
+      background: #e74c3c;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      float: right;
+      margin-top: -10px;
+    }
+    #reward-modal h2 {
+      margin: 0 0 16px;
+      color: #27ae60;
+      font-size: 24px;
+    }
+    #reward-amount {
+      font-size: 20px;
+      font-weight: bold;
+      color: #64ffda;
+    }
+    #winner-fullscreen-modal {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.95);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 3000;
+      color: white;
+    }
+    #winner-fullscreen-modal h2 {
+      margin: 0 0 20px;
+      font-size: 32px;
+      color: gold;
+      text-align: center;
+    }
+    #winner-fullscreen-modal p {
+      margin-bottom: 16px;
+      font-size: 20px;
+    }
+    #winner-fullscreen-modal .bingo-header {
+      background: linear-gradient(to bottom, #3498db, #2980b9);
+      color: white;
+      padding: 8px;
+      border-radius: 4px;
+      font-size: 20px;
+    }
+    #winner-fullscreen-modal .bingo-cell {
+      padding: 12px;
+      font-size: 24px;
+      background: #2a2a2a;
+      color: #f0f0f0;
+    }
+    #winner-fullscreen-modal .bingo-cell.called {
+      background: linear-gradient(to bottom, #2ecc71, #27ae60);
+      color: white;
+    }
+    #winner-fullscreen-modal .bingo-cell.free {
+      background: linear-gradient(to bottom, #f1c40f, #f39c12);
+      color: #2c3e50;
+    }
+    .win-highlight {
+      box-shadow: inset 0 0 0 3px gold, 0 0 15px gold !important;
+      transform: scale(1.05);
+      z-index: 10;
+      position: relative;
+    }
+    #reward-amount-inline {
+      font-size: 22px;
+      font-weight: 900;
+      margin-top: 4px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+      letter-spacing: 0.5px;
+    }
+    .modal-option {
+      background: linear-gradient(to bottom, #3498db, #2980b9);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 15px;
+      margin: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      min-width: 120px;
+    }
+    .modal-options-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin: 20px 0;
+    }
+    
+    /* UPDATED: Fullscreen player grid to square boxes */
+    #players-fullscreen-content {
+      width: 95%;
+      height: 95%;
+      max-width: none;
+      max-height: none;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    #players-fullscreen-grid {
+      display: grid;
+      grid-template-columns: repeat(15, 1fr);
+      grid-template-rows: repeat(10, 1fr);
+      gap: 8px;
+      flex: 1;
+      padding: 10px;
+      background: #f5f5f5;
+      border-radius: 8px;
+      overflow: auto;
+      border: 3px solid #e74c3c; /* Red border around the grid */
+    }
+    
+    /* UPDATED: Change fullscreen players to square boxes */
+    .player-fullscreen {
+      width: 100%;
+      height: 100%;
+      border-radius: 4px; /* Changed from 50% to 4px */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(to bottom, #3498db, #2980b9);
+      color: white;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+      aspect-ratio: 1 / 1;
+      border: 1px solid #e74c3c; /* Red border for each box */
+    }
+    
+    .player-fullscreen:hover {
+      transform: scale(1.05);
+      border-color: #2ecc71;
+    }
+    
+    .player-fullscreen.selected {
+      background: linear-gradient(to bottom, #2ecc71, #27ae60);
+      box-shadow: 0 4px 12px rgba(46, 204, 113, 0.8);
+      border-color: #27ae60;
+    }
+    
+    #players-fullscreen-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    #players-fullscreen-title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #3498db;
+    }
+    #players-fullscreen-count {
+      font-size: 18px;
+      color: #2ecc71;
+      font-weight: bold;
+    }
+    #players-fullscreen-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+      justify-content: center;
+    }
+    #players-fullscreen-actions button {
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    #select-all-players {
+      background: linear-gradient(to bottom, #3498db, #2980b9);
+      color: white;
+    }
+    #deselect-all-players {
+      background: linear-gradient(to bottom, #e74c3c, #c0392b);
+      color: white;
+    }
+    .action-controls-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      margin: 8px auto;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+    
+    #player-card-content {
+      width: 90%;
+      max-width: 600px;
+    }
+    #player-card-input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      background: #2a2a2a;
+      color: white;
+      border: 1px solid #555;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    #player-card-display {
+      margin-top: 20px;
+      padding: 15px;
+      background: #2a2a2a;
+      border-radius: 8px;
+      text-align: left;
+    }
+    .player-card-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 5px;
+      margin-top: 10px;
+    }
+    .player-card-cell {
+      padding: 10px;
+      text-align: center;
+      background: #333;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    .player-card-cell.called {
+      background: linear-gradient(to bottom, #2ecc71, #27ae60);
+      color: white;
+    }
+    .player-card-cell.free {
+      background: linear-gradient(to bottom, #f1c40f, #f39c12);
+      color: #2c3e50;
+    }
+    .player-card-status {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 6px;
+      font-weight: bold;
+    }
+    .player-card-status.winning {
+      background: linear-gradient(to right, #2ecc71, #27ae60);
+      color: white;
+    }
+    .player-card-status.not-winning {
+      background: linear-gradient(to right, #e74c3c, #c0392b);
+      color: white;
+    }
+    
+    #number-popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80vmin;
+      height: 80vmin;
+      max-width: 500px;
+      max-height: 500px;
+      background: linear-gradient(135deg, #2980b9, #1a5276);
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 4000;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+      animation: popup-appear 0.3s ease-out forwards;
+      border: 8px solid rgba(255, 255, 255, 0.3);
+      overflow: hidden;
+    }
+    
+    @keyframes popup-appear {
+      0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+      70% { transform: translate(-50%, -50%) scale(1.05); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+    
+    #number-popup.hiding {
+      animation: popup-hide 0.3s ease-in forwards;
+    }
+    
+    @keyframes popup-hide {
+      0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+    }
+    
+    #popup-letter {
+      font-size: clamp(40px, 15vw, 120px);
+      font-weight: 900;
+      color: white;
+      text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      margin-bottom: 10px;
+    }
+    
+    #popup-number {
+      font-size: clamp(60px, 20vw, 180px);
+      font-weight: 900;
+      color: white;
+      text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      line-height: 1;
+    }
+    
+    #popup-close-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(255,255,255,0.2);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    
+    #popup-close-btn:hover {
+      background: rgba(255,255,255,0.3);
+      transform: scale(1.1);
+    }
+    
+    /* Manual Card Input Styles */
+    #manual-card-content {
+      width: 90%;
+      max-width: 800px;
+    }
+    
+    .card-input-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 5px;
+      margin: 15px 0;
+    }
+    
+    .card-input-cell {
+      padding: 8px;
+      text-align: center;
+      background: #333;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    
+    .card-input-cell.header {
+      background: #3498db;
+      color: white;
+    }
+    
+    .card-input-cell input {
+      width: 100%;
+      padding: 5px;
+      text-align: center;
+      background: #2a2a2a;
+      color: white;
+      border: 1px solid #555;
+      border-radius: 3px;
+    }
+    
+    .card-input-cell.free {
+      background: #f1c40f;
+      color: #2c3e50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    /* Password Protection Modal Styles */
+    #password-protection-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 99999;
+      color: white;
+    }
+    
+    #password-protection-content {
+      background: #1e1e1e;
+      padding: 30px;
+      border-radius: 12px;
+      max-width: 500px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+    }
+    
+    #password-protection-content h2 {
+      margin-top: 0;
+      color: #e74c3c;
+      font-size: 24px;
+    }
+    
+    #password-input {
+      width: 100%;
+      padding: 12px;
+      margin: 20px 0;
+      background: #2a2a2a;
+      color: white;
+      border: 2px solid #3498db;
+      border-radius: 6px;
+      font-size: 16px;
+      text-align: center;
+    }
+    
+    #password-submit {
+      background: linear-gradient(to bottom, #2ecc71, #27ae60);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 10px;
+      transition: all 0.2s;
+    }
+    
+    #password-submit:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(46, 204, 113, 0.6);
+    }
+    
+    #attempts-warning {
+      color: #e74c3c;
+      font-weight: bold;
+      margin-top: 15px;
+      display: none;
+    }
+    
+    #self-destruct-warning {
+      color: #ff4444;
+      font-weight: bold;
+      font-size: 18px;
+      margin-top: 20px;
+      display: none;
+    }
+    
+    #self-destruct-countdown {
+      font-size: 24px;
+      font-weight: bold;
+      color: #ff4444;
+      margin: 10px 0;
+    }
+    
+    /* NEW: Game Limit Styles */
+    .games-left-info {
+      position: absolute;
+      top: 72px;
+      left: 8px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #64ffda;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      z-index: 100;
+      cursor: default;
+    }
+    
+    .game-limit-option {
+      background: linear-gradient(to bottom, #9b59b6, #8e44ad);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 15px;
+      margin: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      min-width: 120px;
+    }
+    
+    .game-limit-option:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(155, 89, 182, 0.6);
+    }
+    
+    #game-limit-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.95);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    #game-limit-content {
+      background: #1e1e1e;
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      font-size: 16px;
+      color: white;
+      text-align: center;
+    }
+    
+    .game-limit-package {
+      background: #2a2a2a;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: 2px solid #3498db;
+    }
+    
+    .game-limit-package:hover {
+      border-color: #2ecc71;
+      transform: translateY(-2px);
+    }
+    
+    .game-limit-package h4 {
+      margin: 0 0 10px;
+      color: #3498db;
+      font-size: 18px;
+    }
+    
+    .game-limit-package p {
+      margin: 5px 0;
+      font-size: 14px;
+    }
+    
+    #game-limit-input {
+      width: 100px;
+      padding: 8px;
+      margin: 10px;
+      background: #2a2a2a;
+      color: white;
+      border: 2px solid #3498db;
+      border-radius: 4px;
+      font-size: 16px;
+      text-align: center;
+    }
+    
+    #set-game-limit-btn {
+      background: linear-gradient(to bottom, #2ecc71, #27ae60);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    
+    #set-game-limit-btn:hover {
+      transform: scale(1.05);
+    }
+    
+    /* NEW: Game Limit Password Modal */
+    #game-limit-password-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.95);
+      z-index: 3000;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    #game-limit-password-content {
+      background: #1e1e1e;
+      padding: 30px;
+      border-radius: 12px;
+      max-width: 500px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+    }
+    
+    #game-limit-password-content h3 {
+      margin-top: 0;
+      color: #9b59b6;
+      font-size: 24px;
+    }
+    
+    #game-limit-password-input {
+      width: 100%;
+      padding: 12px;
+      margin: 20px 0;
+      background: #2a2a2a;
+      color: white;
+      border: 2px solid #9b59b6;
+      border-radius: 6px;
+      font-size: 16px;
+      text-align: center;
+      font-family: monospace;
+      letter-spacing: 2px;
+    }
+    
+    #game-limit-password-submit {
+      background: linear-gradient(to bottom, #9b59b6, #8e44ad);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 10px;
+      transition: all 0.2s;
+    }
+    
+    #game-limit-password-submit:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(155, 89, 182, 0.6);
+    }
+    
+    #game-limit-password-attempts {
+      color: #e74c3c;
+      font-weight: bold;
+      margin-top: 15px;
+      display: none;
+    }
+    
+    /* NEW: Themes Modal Styles */
+    #themes-content {
+      width: 90%;
+      max-width: 800px;
+    }
+    
+    #themes-options {
+      display: grid !important;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px !important;
+      margin: 20px 0 !important;
+    }
+    
+    .theme-option-btn {
+      min-width: 100px !important;
+      max-width: none !important;
+      height: 80px;
+      font-size: 14px !important;
+      font-weight: bold;
+      color: white;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 10px !important;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    }
+    
+    .theme-option-btn:hover {
+      transform: scale(1.05);
+      border-color: white;
+      box-shadow: 0 4px 12px rgba(255,255,255,0.3);
+    }
+    
+    .theme-option-btn.selected {
+      border: 3px solid gold;
+      box-shadow: 0 0 15px gold;
+      transform: scale(1.05);
+    }
+    
+    .theme-name {
+      font-size: 12px;
+      margin-top: 5px;
+      font-weight: bold;
+    }
+    
+    /* Theme-specific background colors */
+    body.theme-default { background: #000; }
+    body.theme-midnight-blue { background: #1a237e; }
+    body.theme-deep-purple { background: #311b92; }
+    body.theme-dark-green { background: #1b5e20; }
+    body.theme-crimson { background: #880e4f; }
+    body.theme-royal-blue { background: #0d47a1; }
+    body.theme-dark-teal { background: #004d40; }
+    body.theme-deep-orange { background: #bf360c; }
+    body.theme-purple { background: #4a148c; }
+    body.theme-navy { background: #01579b; }
+    body.theme-forest { background: #1b5e20; }
+    body.theme-burgundy { background: #4a148c; }
+    
+    /* Media query for very small screens */
+    @media (max-height: 700px) {
+      .display-row {
+        margin: 8px auto;
+      }
+      #recent-numbers-display,
+      #reward-display {
+        width: 120px;
+        height: 120px;
+      }
+      #called-display {
+        width: 100px;
+        height: 100px;
+        font-size: 36px;
+      }
+      #all-numbers-grid {
+        margin: 6px auto;
+        gap: 2px;
+        padding: 6px;
+      }
+      .number-badge .number {
+        font-size: clamp(14px, 3vw, 20px);
+      }
+      .action-controls-row {
+        margin: 6px auto;
+      }
+      button, select, input {
+        font-size: 10px;
+        padding: 4px 6px;
+      }
+      #themes-options {
+        grid-template-columns: repeat(2, 1fr) !important;
+      }
+      .theme-option-btn {
+        height: 70px;
+        font-size: 12px !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Password Protection Modal -->
+  <div id="password-protection-modal">
+    <div id="password-protection-content">
+      <h2>🔒 PROTECTED SOURCE CODE</h2>
+      <p>This application contains proprietary source code protected by copyright law.</p>
+      <p>Unauthorized access, modification, or distribution is strictly prohibited.</p>
+      <p>Enter developer password to access:</p>
+      <input type="password" id="password-input" placeholder="Enter password" autocomplete="off">
+      <button id="password-submit">VERIFY ACCESS</button>
+      <div id="attempts-warning">Incorrect password. Attempts remaining: <span id="attempts-count">3</span></div>
+      <div id="self-destruct-warning">
+        <p>SECURITY BREACH DETECTED!</p>
+        <p>Application will self-destruct in:</p>
+        <div id="self-destruct-countdown">10</div>
+        <p>All functionality will be permanently disabled.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- NEW: Audio Selector Modal -->
+  <div id="audio-selector-modal">
+    <div id="audio-selector-content">
+      <button id="close-audio-selector-modal" style="float:right;background:#e74c3c;color:white;border:none;border-radius:4px;padding:5px 10px;cursor:pointer;">❌ Close</button>
+      <h3>🎵 Select Audio File</h3>
+      <p>Choose which audio file to use for number calls:</p>
+      
+      <div id="audio-selector-options">
+        <!-- Audio options will be populated by JavaScript -->
+      </div>
+      
+      <div id="audio-upload-section">
+        <h4>Custom Audio</h4>
+        <div id="custom-audio-upload">
+          📁 Upload Custom Audio File
+          <input type="file" id="custom-audio-input" accept="audio/*">
+        </div>
+        <p style="font-size:12px;color:#aaa;">Supported formats: MP3, WAV, OGG</p>
+      </div>
+      
+      <div id="current-audio-info">
+        Currently using: <span class="audio-name" id="current-audio-name">Default (audio/*.wav)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- NEW: Game Limit Password Modal -->
+  <div id="game-limit-password-modal">
+    <div id="game-limit-password-content">
+      <h3>🔐 GAME LIMIT ACCESS</h3>
+      <p>Enter the game limit access key to proceed:</p>
+      <input type="password" id="game-limit-password-input" placeholder="Enter access key" autocomplete="off">
+      <button id="game-limit-password-submit">VERIFY KEY</button>
+      <div id="game-limit-password-attempts">Incorrect key. Attempts remaining: <span id="game-limit-attempts-count">3</span></div>
+    </div>
+  </div>
+
+  <!-- NEW: Themes Modal -->
+  <div id="themes-modal">
+    <div id="themes-content">
+      <button id="close-themes-modal">❌ Close</button>
+      <h3>🎨 Select Theme</h3>
+      <p>Choose a background color for your Bingo game:</p>
+      <div id="themes-options">
+        <!-- Theme options will be generated by JavaScript -->
+      </div>
+    </div>
+  </div>
+
+  <div class="main-ui">
+    <div class="cost-info" id="cost-display">
+      Game Cost: 0 Birr
+    </div>
+    
+    <!-- NEW: Audio Selector Button -->
+    <button id="audio-selector-btn" title="Select Audio Files">🎵</button>
+    
+    <!-- UPDATED: Even Smaller Game Limit Button at Top Right -->
+    <button id="game-limit-btn-small" title="Game Limit (Click 15 times to open)">L</button>
+    
+    <div class="games-left-info" id="games-left-display">
+      Games Left: 3
+    </div>
+    
+    <div class="developer-info">
+      Developed by: Habtamu Mesele<br>
+      Phone: 0924483717
+    </div>
+    
+    <!-- UPDATED: Added floating menu button -->
+    <button id="floating-menu-btn">⚙️</button>
+    
+    <div class="display-row">
+      <div id="recent-numbers-display">
+        <div style="font-size:14px;margin-bottom:6px;">Recent</div>
+        <div id="recent-list"></div>
+      </div>
+      <div id="called-display" aria-live="polite">
+        <span>--</span>
+      </div>
+      <div id="reward-display">
+        <div style="font-size:14px;opacity:0.9;">Reward</div>
+        <div id="reward-amount-inline">-- Birr</div>
+      </div>
+    </div>
+    
+    <div id="all-numbers-grid"></div>
+    
+    <div class="action-controls-row">
+      <button id="new-game">New Game</button>
+      <button id="player-card-btn">Player Card</button>
+      <div id="interval-control">
+        <span>Speed:</span>
+        <button id="decrease-interval">–</button>
+        <span id="interval-display">0.01s</span>
+        <button id="increase-interval">+</button>
+      </div>
+      <button id="auto-btn">Start Auto Play</button>
+      <button id="speed-settings-btn">Speed Settings</button>
+      <button id="can-player-win-btn">Can Player Win?</button>
+      <button id="manual-card-btn">Add Manual Card</button>
+      <button id="refresh-btn">REFRESH</button>
+    </div>
+    
+    <div id="status"></div>
+    <div id="winner-display"></div>
+    <div id="speaking-indicator">🔊 Speaking...</div>
+    <div id="audio-file-info"></div>
+  </div>
+  
+  <div id="number-popup" style="display: none;">
+    <button id="popup-close-btn">✕</button>
+    <div id="popup-letter"></div>
+    <div id="popup-number"></div>
+  </div>
+  
+  <div id="floating-menu">
+    <button id="close-floating-menu">✕</button>
+    <div class="top-info-buttons">
+      <button id="round-btn" class="top-info-btn">ROUND: 0</button>
+      <button id="players-btn" class="top-info-btn">PLAYERS: 0</button>
+      <button id="winning-rule-btn" class="top-info-btn">WINNING RULE</button>
+      <button id="reward-percent-btn" class="top-info-btn">REWARD %</button>
+      <button id="payment-btn" class="top-info-btn">PAYMENT</button>
+      <button id="voice-settings-btn" class="top-info-btn">VOICE SETTINGS</button>
+      <button id="manual-card-btn-float" class="top-info-btn">ADD MANUAL CARD</button>
+      <!-- NEW: Themes Button -->
+      <button id="themes-btn" class="top-info-btn">THEMES</button>
+    </div>
+    <button id="floating-play-btn" class="big-play-btn">PLAY</button>
+    
+    <div class="menu-section">
+      <h3>Players (1–150)</h3>
+      <div id="player-list-float"></div>
+      <div class="button-row">
+        <button id="select-all-players-float">Select All</button>
+        <button id="clear-all-players">Clear All Players</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- NEW: Game Limit Modal -->
+  <div id="game-limit-modal">
+    <div id="game-limit-content">
+      <button id="close-game-limit-modal">❌ Close</button>
+      <h3>Game Limit Settings</h3>
+      <p>Set the maximum number of games that can be played:</p>
+      
+      <div style="margin: 20px 0;">
+        <label for="game-limit-input">Number of games:</label>
+        <input type="number" id="game-limit-input" min="1" max="9999" placeholder="Enter number">
+        <button id="set-game-limit-btn">Set Limit</button>
+      </div>
+      
+      <div style="margin: 20px 0;">
+        <h4>Predefined Packages:</h4>
+        
+        <div class="game-limit-package" data-games="10">
+          <h4>💰 BASIC PACKAGE</h4>
+          <p>10 Games</p>
+          <p><strong>Price: 100 Birr</strong></p>
+          <button class="game-limit-option" data-games="10">Select 10 Games</button>
+        </div>
+        
+        <div class="game-limit-package" data-games="50">
+          <h4>💰 STANDARD PACKAGE</h4>
+          <p>50 Games</p>
+          <p><strong>Price: 400 Birr</strong></p>
+          <button class="game-limit-option" data-games="50">Select 50 Games</button>
+        </div>
+        
+        <div class="game-limit-package" data-games="100">
+          <h4>💰 PREMIUM PACKAGE</h4>
+          <p>100 Games</p>
+          <p><strong>Price: 700 Birr</strong></p>
+          <button class="game-limit-option" data-games="100">Select 100 Games</button>
+        </div>
+        
+        <div class="game-limit-package" data-games="200">
+          <h4>💰 ULTIMATE PACKAGE</h4>
+          <p>200 Games</p>
+          <p><strong>Price: 1200 Birr</strong></p>
+          <button class="game-limit-option" data-games="200">Select 200 Games</button>
+        </div>
+        
+        <div class="game-limit-package" data-games="500">
+          <h4>💰 ENTERPRISE PACKAGE</h4>
+          <p>500 Games</p>
+          <p><strong>Price: 2500 Birr</strong></p>
+          <button class="game-limit-option" data-games="500">Select 500 Games</button>
+        </div>
+      </div>
+      
+      <div style="margin-top: 20px; padding: 15px; background: #2a2a2a; border-radius: 8px;">
+        <h4>Current Status:</h4>
+        <p id="current-games-status">Loading...</p>
+        <button id="reset-games-count-btn" style="background: #e74c3c; color: white; padding: 8px 15px; border-radius: 4px; margin-top: 10px;">Reset Games Played</button>
+        <p style="font-size: 12px; color: #ff7043; margin-top: 10px;">Note: Resetting games played requires developer password</p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Manual Card Input Modal -->
+  <div id="manual-card-modal">
+    <div id="manual-card-content">
+      <button id="close-manual-card-modal">❌ Close</button>
+      <h3>Add Manual Player Card</h3>
+      <p>Enter player ID (1-150) and card numbers:</p>
+      <div style="margin: 15px 0;">
+        <label for="manual-player-id">Player ID:</label>
+        <input type="number" id="manual-player-id" min="1" max="150" placeholder="Enter player ID">
+      </div>
+      
+      <div class="card-input-grid">
+        <div class="card-input-cell header">B</div>
+        <div class="card-input-cell header">I</div>
+        <div class="card-input-cell header">N</div>
+        <div class="card-input-cell header">G</div>
+        <div class="card-input-cell header">O</div>
+        
+        <!-- Row 1 -->
+        <div class="card-input-cell"><input type="number" id="b1" min="1" max="15" placeholder="1-15"></div>
+        <div class="card-input-cell"><input type="number" id="i1" min="16" max="30" placeholder="16-30"></div>
+        <div class="card-input-cell"><input type="number" id="n1" min="31" max="45" placeholder="31-45"></div>
+        <div class="card-input-cell"><input type="number" id="g1" min="46" max="60" placeholder="46-60"></div>
+        <div class="card-input-cell"><input type="number" id="o1" min="61" max="75" placeholder="61-75"></div>
+        
+        <!-- Row 2 -->
+        <div class="card-input-cell"><input type="number" id="b2" min="1" max="15" placeholder="1-15"></div>
+        <div class="card-input-cell"><input type="number" id="i2" min="16" max="30" placeholder="16-30"></div>
+        <div class="card-input-cell"><input type="number" id="n2" min="31" max="45" placeholder="31-45"></div>
+        <div class="card-input-cell"><input type="number" id="g2" min="46" max="60" placeholder="46-60"></div>
+        <div class="card-input-cell"><input type="number" id="o2" min="61" max="75" placeholder="61-75"></div>
+        
+        <!-- Row 3 -->
+        <div class="card-input-cell"><input type="number" id="b3" min="1" max="15" placeholder="1-15"></div>
+        <div class="card-input-cell"><input type="number" id="i3" min="16" max="30" placeholder="16-30"></div>
+        <div class="card-input-cell free">FREE</div>
+        <div class="card-input-cell"><input type="number" id="g3" min="46" max="60" placeholder="46-60"></div>
+        <div class="card-input-cell"><input type="number" id="o3" min="61" max="75" placeholder="61-75"></div>
+        
+        <!-- Row 4 -->
+        <div class="card-input-cell"><input type="number" id="b4" min="1" max="15" placeholder="1-15"></div>
+        <div class="card-input-cell"><input type="number" id="i4" min="16" max="30" placeholder="16-30"></div>
+        <div class="card-input-cell"><input type="number" id="n4" min="31" max="45" placeholder="31-45"></div>
+        <div class="card-input-cell"><input type="number" id="g4" min="46" max="60" placeholder="46-60"></div>
+        <div class="card-input-cell"><input type="number" id="o4" min="61" max="75" placeholder="61-75"></div>
+        
+        <!-- Row 5 -->
+        <div class="card-input-cell"><input type="number" id="b5" min="1" max="15" placeholder="1-15"></div>
+        <div class="card-input-cell"><input type="number" id="i5" min="16" max="30" placeholder="16-30"></div>
+        <div class="card-input-cell"><input type="number" id="n5" min="31" max="45" placeholder="31-45"></div>
+        <div class="card-input-cell"><input type="number" id="g5" min="46" max="60" placeholder="46-60"></div>
+        <div class="card-input-cell"><input type="number" id="o5" min="61" max="75" placeholder="61-75"></div>
+      </div>
+      
+      <div class="button-row">
+        <button id="save-manual-card">Save Card</button>
+        <button id="clear-manual-card">Clear Form</button>
+      </div>
+      
+      <div id="manual-card-status" style="margin-top: 15px; padding: 10px; border-radius: 6px; display: none;"></div>
+    </div>
+  </div>
+  
+  <div id="speed-settings-modal">
+    <div id="speed-settings-content">
+      <button id="close-speed-settings-modal">❌ Close</button>
+      <h3>Speed Settings</h3>
+      <div id="speed-options"></div>
+    </div>
+  </div>
+  
+  <div id="players-fullscreen-modal">
+    <div id="players-fullscreen-content">
+      <div id="players-fullscreen-header">
+        <div id="players-fullscreen-title">Select Players (1-150)</div>
+        <button id="close-players-fullscreen-modal">❌ Close</button>
+      </div>
+      <div id="players-fullscreen-count">Selected: 0 players</div>
+      <div id="players-fullscreen-grid"></div>
+      <div id="players-fullscreen-actions">
+        <button id="select-all-players">Select All</button>
+        <button id="deselect-all-players">Deselect All</button>
+      </div>
+    </div>
+  </div>
+  
+  <div id="player-card-modal">
+    <div id="player-card-content">
+      <button id="close-player-card-modal">❌ Close</button>
+      <h3>Player Card Viewer</h3>
+      <p>Enter player ID (1-150) to view their card:</p>
+      <input type="number" id="player-card-input" min="1" max="150" placeholder="Enter player ID">
+      <button id="view-player-card">View Card</button>
+      <div id="player-card-display" style="display: none;">
+        <h4>Player <span id="player-card-id"></span> Card:</h4>
+        <div class="player-card-grid" id="player-card-grid"></div>
+        <div class="player-card-status" id="player-card-status"></div>
+      </div>
+    </div>
+  </div>
+  
+  <div id="winning-rule-modal">
+    <div id="winning-rule-content">
+      <button id="close-winning-rule-modal">❌ Close</button>
+      <h3>Select Winning Rule</h3>
+      <div class="modal-options-container">
+        <button class="modal-option" data-rule="anyLine">Any Row, Column, or Diagonal</button>
+        <button class="modal-option" data-rule="fourCorners">Four Corners</button>
+        <button class="modal-option" data-rule="fullHouse">Full House</button>
+        <button class="modal-option" data-rule="diagonal">Diagonal Only</button>
+        <button class="modal-option" data-rule="letterX">Letter X</button>
+        <button class="modal-option" data-rule="anyLineOrFourCorners">Any Row, Column, Diagonal, or Four Corners</button>
+      </div>
+    </div>
+  </div>
+  
+  <div id="voice-settings-modal">
+    <div id="voice-settings-content">
+      <button id="close-voice-settings-modal">❌ Close</button>
+      <h3>Voice Settings</h3>
+      <div style="margin: 20px 0;">
+        <select id="language-select-float">
+          <option value="auto">Language: Auto</option>
+          <option value="am">Amharic</option>
+          <option value="en">English</option>
+        </select>
+        <select id="voice-type-select-float">
+          <option value="">Voice Type...</option>
+        </select>
+      </div>
+      <div class="modal-options-container">
+        <button class="modal-option" id="clear-audio-btn-float">Clear Speech</button>
+        <button class="modal-option" id="trigger-audio-file">Load Audio</button>
+        <button class="modal-option" id="install-amharic-btn-float">➕ Install Amharic Voice</button>
+      </div>
+    </div>
+  </div>
+  
+  <div id="payment-modal">
+    <div id="payment-modal-content">
+      <button id="close-payment-modal">❌ Close</button>
+      <h3>Select Payment Amount (in Birr)</h3>
+      <div id="payment-options"></div>
+    </div>
+  </div>
+  
+  <div id="reward-percent-modal">
+    <div id="reward-percent-content">
+      <button id="close-reward-percent-modal">❌ Close</button>
+      <h3>Select Reward Percentage</h3>
+      <div id="reward-percent-options"></div>
+    </div>
+  </div>
+  
+  <div id="voice-install-modal">
+    <div id="voice-install-content">
+      <button id="close-modal">❌ Close</button>
+      <h3>How to Install Amharic Voice?</h3>
+      <p>This app requires an Amharic speech engine from your operating system. Follow the steps below:</p>
+    </div>
+  </div>
+  
+  <div id="reward-modal">
+    <div id="reward-modal-content">
+      <button id="close-reward-modal">❌ Close</button>
+      <h2>🏆 Winner's Reward</h2>
+      <p id="reward-amount">--</p>
+    </div>
+  </div>
+  
+  <div id="winner-fullscreen-modal"></div>
+  <input type="file" id="audio-file-input-float" accept="audio/*" style="display:none;"/>
+  
+  <script>
+    // =============================================
+    // ENHANCED SOURCE CODE PROTECTION SYSTEM
+    // =============================================
+    
+    (function() {
+      'use strict';
+      
+      // Password protection system
+      const CORRECT_PASSWORD = "habtamumesele092@gmail.com";
+      let passwordAttempts = 3;
+      let protectionTriggered = false;
+      let selfDestructInitiated = false;
+      
+      // Check if access is authorized
+      function checkAuthorization() {
+        const savedAuth = localStorage.getItem('bingoAuth');
+        if (savedAuth === 'granted') {
+          hidePasswordModal();
+          return true;
+        }
+        showPasswordModal();
+        return false;
+      }
+      
+      // Show password modal
+      function showPasswordModal() {
+        document.getElementById('password-protection-modal').style.display = 'flex';
+        document.getElementById('password-input').focus();
+        updateAttemptsDisplay();
+      }
+      
+      // Hide password modal
+      function hidePasswordModal() {
+        document.getElementById('password-protection-modal').style.display = 'none';
+        document.querySelector('.main-ui').style.display = 'block';
+      }
+      
+      // Update attempts display
+      function updateAttemptsDisplay() {
+        document.getElementById('attempts-count').textContent = passwordAttempts;
+      }
+      
+      // Verify password
+      function verifyPassword() {
+        const input = document.getElementById('password-input').value;
+        
+        if (input === CORRECT_PASSWORD) {
+          // Grant access
+          localStorage.setItem('bingoAuth', 'granted');
+          hidePasswordModal();
+          return true;
+        } else {
+          // Wrong password
+          passwordAttempts--;
+          updateAttemptsDisplay();
+          
+          if (passwordAttempts <= 0) {
+            initiateSelfDestruct();
+          } else {
+            document.getElementById('attempts-warning').style.display = 'block';
+            document.getElementById('password-input').value = '';
+            document.getElementById('password-input').focus();
+          }
+          return false;
+        }
+      }
+      
+      // Initiate self-destruct sequence
+      function initiateSelfDestruct() {
+        if (selfDestructInitiated) return;
+        selfDestructInitiated = true;
+        
+        document.getElementById('attempts-warning').style.display = 'none';
+        document.getElementById('self-destruct-warning').style.display = 'block';
+        
+        let countdown = 10;
+        const countdownEl = document.getElementById('self-destruct-countdown');
+        
+        const countdownInterval = setInterval(() => {
+          countdown--;
+          countdownEl.textContent = countdown;
+          
+          if (countdown <= 0) {
+            clearInterval(countdownInterval);
+            executeSelfDestruct();
+          }
+        }, 1000);
+      }
+      
+      // Execute self-destruct - disable all functionality
+      function executeSelfDestruct() {
+        // Clear all data
+        try {
+          localStorage.clear();
+          sessionStorage.clear();
+        } catch(e) {}
+        
+        // Disable all functionality
+        document.body.innerHTML = `
+          <div style="display:flex; justify-content:center; align-items:center; height:100vh; background:#000; color:#e74c3c; font-size:24px; text-align:center; padding:20px;">
+            <div>
+              <h1>⚠️ SECURITY BREACH DETECTED</h1>
+              <p>Unauthorized access attempt detected!</p>
+              <p>This application has been permanently disabled.</p>
+              <p>Contact developer for legitimate access.</p>
+              <p style="font-size:16px; margin-top:20px;">Developer: Habtamu Mesele<br>Phone: 0924483717</p>
+            </div>
+          </div>
+        `;
+        
+        // Override all functions to prevent any operation
+        window.onload = null;
+        window.addEventListener = function() {};
+        window.setTimeout = function() {};
+        window.setInterval = function() {};
+        
+        // Prevent further JavaScript execution
+        throw new Error("Security violation - application disabled");
+      }
+      
+      // =============================================
+      // DETECTION METHODS FOR SOURCE CODE ACCESS
+      // =============================================
+      
+      // Detect view-source protocol
+      if (window.location.protocol === 'view-source:') {
+        showPasswordModal();
+      }
+      
+      // Detect common developer tools
+      function detectDevTools() {
+        const widthThreshold = window.outerWidth - window.innerWidth > 160;
+        const heightThreshold = window.outerHeight - window.innerHeight > 160;
+        
+        if (widthThreshold || heightThreshold) {
+          if (!protectionTriggered && !checkAuthorization()) {
+            protectionTriggered = true;
+            return true;
+          }
+        }
+        return false;
+      }
+      
+      // Detect right-click context menu
+      document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        if (!protectionTriggered && !checkAuthorization()) {
+          protectionTriggered = true;
+        }
+        return false;
+      });
+      
+      // Detect keyboard shortcuts for dev tools
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'F12' || 
+            (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i')) ||
+            (e.ctrlKey && e.shiftKey && (e.key === 'C' || e.key === 'c')) ||
+            (e.ctrlKey && e.shiftKey && (e.key === 'J' || e.key === 'j')) ||
+            (e.ctrlKey && (e.key === 'U' || e.key === 'u'))) {
+          e.preventDefault();
+          if (!protectionTriggered && !checkAuthorization()) {
+            protectionTriggered = true;
+          }
+          return false;
+        }
+      });
+      
+      // Detect console usage
+      const originalConsole = {};
+      ['log', 'warn', 'error', 'info', 'debug'].forEach(method => {
+        if (console[method]) {
+          originalConsole[method] = console[method];
+          console[method] = function() {
+            if (!protectionTriggered && !checkAuthorization()) {
+              protectionTriggered = true;
+            }
+            if (originalConsole[method]) {
+              originalConsole[method].apply(console, arguments);
+            }
+          };
+        }
+      });
+      
+      // Override Function toString to hide function contents
+      const originalToString = Function.prototype.toString;
+      Function.prototype.toString = function() {
+        if (!checkAuthorization()) {
+          return 'function() { [protected code - unauthorized access detected] }';
+        }
+        return originalToString.call(this);
+      };
+      
+      // Set up event listeners for password verification
+      document.getElementById('password-submit').addEventListener('click', verifyPassword);
+      document.getElementById('password-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          verifyPassword();
+        }
+      });
+      
+      // Initial authorization check
+      window.addEventListener('load', function() {
+        if (!checkAuthorization()) {
+          // Hide all application content until authorized
+          document.querySelector('.main-ui').style.display = 'none';
+          document.getElementById('floating-menu').style.display = 'none';
+        }
+      });
+      
+      // Continuous monitoring
+      setInterval(detectDevTools, 1000);
+      
+    })();
+
+    // =============================================
+    // BINGO CALLER APPLICATION CODE
+    // =============================================
+    
+    const REWARD_PERCENTAGES = [0.75, 0.65, 0.60, 0.55, 0.50, 0.45, 0.40, 0.35, 0.30, 0.25, 0.20];
+    
+    function calculateReward(totalCost, percent = 0.75) {
+      return Math.floor(totalCost * percent + 5);
+    }
+    
+    const PAYMENT_AMOUNTS = [10, 20, 30, 40, 50, 100, 200, 300, 400];
+    
+    const SPEED_PRESETS = [
+      { label: "Ultra Fast", value: 10 },
+      { label: "Very Fast", value: 20 },
+      { label: "Fast", value: 50 },
+      { label: "Normal", value: 100 },
+      { label: "Slow", value: 500 }
+    ];
+    
+    // NEW: Audio file definitions
+    const AUDIO_FILES = [
+      { id: 'default', name: 'Default Audio Set', path: 'audio/', ext: 'wav', description: 'Standard audio files (0.wav, 1.wav, etc.)' },
+      { id: 'set1', name: 'Audio Set 1', path: 'audio1/', ext: 'wav', description: 'Alternative voice set 1' },
+      { id: 'set2', name: 'Audio Set 2', path: 'audio2/', ext: 'mp3', description: 'Alternative voice set 2' },
+      { id: 'set3', name: 'Audio Set 3', path: 'audio3/', ext: 'wav', description: 'Alternative voice set 3' },
+      { id: 'set4', name: 'Audio Set 4', path: 'audio4/', ext: 'mp3', description: 'Alternative voice set 4' },
+      { id: 'set5', name: 'Audio Set 5', path: 'audio5/', ext: 'wav', description: 'Alternative voice set 5' },
+      { id: 'custom', name: 'Custom Audio', path: null, ext: null, description: 'Upload your own audio files' }
+    ];
+    
+    // Theme definitions - 12 different background colors
+    const THEMES = [
+      { id: 'default', name: 'Default Black', color: '#000000', textColor: '#ffffff' },
+      { id: 'midnight-blue', name: 'Midnight Blue', color: '#1a237e', textColor: '#ffffff' },
+      { id: 'deep-purple', name: 'Deep Purple', color: '#311b92', textColor: '#ffffff' },
+      { id: 'dark-green', name: 'Dark Green', color: '#1b5e20', textColor: '#ffffff' },
+      { id: 'crimson', name: 'Crimson', color: '#880e4f', textColor: '#ffffff' },
+      { id: 'royal-blue', name: 'Royal Blue', color: '#0d47a1', textColor: '#ffffff' },
+      { id: 'dark-teal', name: 'Dark Teal', color: '#004d40', textColor: '#ffffff' },
+      { id: 'deep-orange', name: 'Deep Orange', color: '#bf360c', textColor: '#ffffff' },
+      { id: 'purple', name: 'Purple', color: '#4a148c', textColor: '#ffffff' },
+      { id: 'navy', name: 'Navy Blue', color: '#01579b', textColor: '#ffffff' },
+      { id: 'forest', name: 'Forest Green', color: '#1b5e20', textColor: '#ffffff' },
+      { id: 'burgundy', name: 'Burgundy', color: '#4a148c', textColor: '#ffffff' }
+    ];
+    
+    class BingoCaller {
+      constructor() {
+        // Enhanced shuffling algorithm
+        this.shuffledNumbers = this.enhancedShuffle();
+        this.calledNumbers = [];
+        this.preferredLanguage = 'auto';
+        this.selectedVoiceURI = null;
+        this.autoInterval = null;
+        this.autoPlaying = false;
+        this.isSpeaking = false;
+        this.players = [];
+        
+        this.winningRule = this.loadSetting('bingoWinningRule', 'anyLine');
+        
+        this.allPlayerCards = {};
+        this.voicesLoaded = false;
+        this.customAudio = null;
+        this.gameRounds = 0;
+        
+        // NEW: Audio selection system
+        this.selectedAudioSet = this.loadSetting('bingoAudioSet', 'default');
+        this.customAudioFiles = this.loadSetting('bingoCustomAudio', {});
+        this.currentAudioPath = this.getAudioPathForSet(this.selectedAudioSet);
+        this.currentAudioExt = this.getAudioExtForSet(this.selectedAudioSet);
+        
+        // Game Limit System - CHANGED: Default to 3 games instead of unlimited
+        this.maxGames = this.loadSetting('bingoMaxGames', 3); // Default 3 games
+        this.gamesPlayed = this.loadSetting('bingoGamesPlayed', 0);
+        
+        // Theme System
+        this.currentTheme = this.loadSetting('bingoTheme', 'default');
+        this.applyTheme(this.currentTheme);
+        
+        // Click counter for game limit button
+        this.gameLimitClickCount = 0;
+        
+        // Game Limit Password System
+        this.gameLimitAccessKey = "e02d84bd8ece3a931af68c9e99ddb431be5118147e5098f021aa1fd82f023de4";
+        this.gameLimitPasswordAttempts = 3;
+        
+        // Changed default interval to 10ms (0.01 seconds)
+        this.autoIntervalMs = this.loadSetting('bingoAutoInterval', 10);
+        this.rewardPercent = this.loadSetting('bingoRewardPercent', 0.75);
+        this.selectedPaymentPerPlayer = this.loadSetting('bingoPaymentAmount', null);
+        
+        this.showPlayerCount = true;
+        this.autoPlayToggleSound = 0;
+        
+        // NEW: Auto-play ready state
+        this.autoPlayReady = false;
+        
+        this.updateDisplay();
+        this.renderPlayerSelection();
+        this.renderFullScreenPlayers();
+        this.updateRulesDescription();
+        this.loadVoices();
+        this.updateIntervalDisplay();
+        this.updateGameLimitDisplay();
+        this.updateRoundDisplay();
+        this.updatePlayerCountDisplay();
+        this.updateRecentAndReward();
+        this.updateButtonLabels();
+        
+        // Load original 50 player cards
+        this.loadOriginalPlayerCards();
+      }
+      
+      // NEW: Audio set management methods
+      getAudioPathForSet(audioSetId) {
+        const audioSet = AUDIO_FILES.find(set => set.id === audioSetId);
+        return audioSet ? audioSet.path : 'audio/';
+      }
+      
+      getAudioExtForSet(audioSetId) {
+        const audioSet = AUDIO_FILES.find(set => set.id === audioSetId);
+        return audioSet ? audioSet.ext : 'wav';
+      }
+      
+      getAudioFileName(number) {
+        if (this.selectedAudioSet === 'custom' && this.customAudioFiles[number]) {
+          return this.customAudioFiles[number];
+        }
+        return `${this.currentAudioPath}${number}.${this.currentAudioExt}`;
+      }
+      
+      setAudioSet(audioSetId) {
+        this.selectedAudioSet = audioSetId;
+        this.currentAudioPath = this.getAudioPathForSet(audioSetId);
+        this.currentAudioExt = this.getAudioExtForSet(audioSetId);
+        this.saveSetting('bingoAudioSet', audioSetId);
+        this.updateAudioInfoDisplay();
+      }
+      
+      addCustomAudioFile(number, fileUrl) {
+        if (!this.customAudioFiles) {
+          this.customAudioFiles = {};
+        }
+        this.customAudioFiles[number] = fileUrl;
+        this.saveSetting('bingoCustomAudio', this.customAudioFiles);
+      }
+      
+      updateAudioInfoDisplay() {
+        const currentAudioSet = AUDIO_FILES.find(set => set.id === this.selectedAudioSet);
+        const displayName = currentAudioSet ? currentAudioSet.name : 'Default Audio';
+        document.getElementById('current-audio-name').textContent = displayName;
+      }
+      
+      // Show audio selector modal
+      showAudioSelectorModal() {
+        const modal = document.getElementById('audio-selector-modal');
+        const optionsContainer = document.getElementById('audio-selector-options');
+        
+        optionsContainer.innerHTML = '';
+        
+        AUDIO_FILES.forEach(audioSet => {
+          const btn = document.createElement('button');
+          btn.className = 'audio-option-btn';
+          if (this.selectedAudioSet === audioSet.id) {
+            btn.classList.add('selected');
+          }
+          btn.dataset.audioSet = audioSet.id;
+          
+          const nameDiv = document.createElement('div');
+          nameDiv.className = 'audio-option-name';
+          nameDiv.textContent = audioSet.name;
+          
+          const statusDiv = document.createElement('div');
+          statusDiv.className = 'audio-option-status';
+          statusDiv.textContent = audioSet.description;
+          
+          btn.appendChild(nameDiv);
+          btn.appendChild(statusDiv);
+          
+          btn.addEventListener('click', () => {
+            if (audioSet.id === 'custom') {
+              // For custom audio, show file upload
+              document.getElementById('custom-audio-input').click();
+            } else {
+              this.setAudioSet(audioSet.id);
+              this.closeAudioSelectorModal();
+              
+              // Play test sound
+              this.playTestAudio();
+            }
+          });
+          
+          optionsContainer.appendChild(btn);
+        });
+        
+        this.updateAudioInfoDisplay();
+        modal.style.display = 'flex';
+      }
+      
+      closeAudioSelectorModal() {
+        document.getElementById('audio-selector-modal').style.display = 'none';
+      }
+      
+      playTestAudio() {
+        // Play a test sound to verify audio set is working
+        const testAudio = new Audio(this.getAudioFileName(1));
+        testAudio.volume = 0.5;
+        testAudio.play().catch(() => {
+          console.log('Test audio not available for this set');
+        });
+      }
+      
+      // Modified playRecordedAudio to use selected audio set
+      playRecordedAudio(num, onEnd = null) {
+        const audioUrl = this.getAudioFileName(num);
+        const audio = new Audio(audioUrl);
+        audio.volume = 1;
+        this.isSpeaking = true;
+        document.getElementById('speaking-indicator').style.display = 'block';
+        
+        audio.onended = () => {
+          this.isSpeaking = false;
+          document.getElementById('speaking-indicator').style.display = 'none';
+          if (onEnd) onEnd();
+        };
+        
+        audio.onerror = () => {
+          this.isSpeaking = false;
+          document.getElementById('speaking-indicator').style.display = 'none';
+          const letter = this.getLetterForNumber(num);
+          const text = this.getAmharicPronunciation(letter, num, false);
+          this.speak(text, 'am', onEnd);
+        };
+        
+        audio.play().catch(e => {
+          this.isSpeaking = false;
+          document.getElementById('speaking-indicator').style.display = 'none';
+          const letter = this.getLetterForNumber(num);
+          const text = this.getAmharicPronunciation(letter, num, false);
+          this.speak(text, 'am', onEnd);
+        });
+      }
+      
+      // Apply theme
+      applyTheme(themeId) {
+        const theme = THEMES.find(t => t.id === themeId) || THEMES[0];
+        
+        // Remove all existing theme classes
+        document.body.classList.remove(...THEMES.map(t => 'theme-' + t.id));
+        
+        // Add the selected theme class
+        document.body.classList.add('theme-' + themeId);
+        
+        // Save theme preference
+        this.currentTheme = themeId;
+        this.saveSetting('bingoTheme', themeId);
+        
+        // Update theme button if it exists
+        const themeBtn = document.getElementById('themes-btn');
+        if (themeBtn) {
+          themeBtn.innerHTML = `🎨 ${theme.name}`;
+        }
+      }
+      
+      // Show themes modal
+      showThemesModal() {
+        const modal = document.getElementById('themes-modal');
+        const optionsContainer = document.getElementById('themes-options');
+        
+        optionsContainer.innerHTML = '';
+        
+        THEMES.forEach(theme => {
+          const btn = document.createElement('button');
+          btn.className = 'theme-option-btn';
+          if (this.currentTheme === theme.id) {
+            btn.classList.add('selected');
+          }
+          btn.style.background = theme.color;
+          btn.style.color = theme.textColor;
+          btn.dataset.theme = theme.id;
+          
+          const icon = document.createElement('div');
+          icon.textContent = '🎨';
+          icon.style.fontSize = '20px';
+          icon.style.marginBottom = '5px';
+          
+          const name = document.createElement('div');
+          name.className = 'theme-name';
+          name.textContent = theme.name;
+          
+          btn.appendChild(icon);
+          btn.appendChild(name);
+          
+          btn.addEventListener('click', () => {
+            this.applyTheme(theme.id);
+            this.closeThemesModal();
+            
+            // Play confirmation sound
+            const audio = new Audio(this.getAudioFileName('g'));
+            audio.volume = 0.5;
+            audio.play().catch(() => {});
+          });
+          
+          optionsContainer.appendChild(btn);
+        });
+        
+        modal.style.display = 'flex';
+      }
+      
+      // Close themes modal
+      closeThemesModal() {
+        document.getElementById('themes-modal').style.display = 'none';
+      }
+      
+      // Show game limit password modal
+      showGameLimitPasswordModal() {
+        document.getElementById('game-limit-password-modal').style.display = 'flex';
+        document.getElementById('game-limit-password-input').focus();
+        this.updateGameLimitPasswordAttempts();
+      }
+      
+      // Hide game limit password modal
+      hideGameLimitPasswordModal() {
+        document.getElementById('game-limit-password-modal').style.display = 'none';
+      }
+      
+      // Update game limit password attempts display
+      updateGameLimitPasswordAttempts() {
+        document.getElementById('game-limit-attempts-count').textContent = this.gameLimitPasswordAttempts;
+      }
+      
+      // Verify game limit access key
+      verifyGameLimitAccessKey() {
+        const input = document.getElementById('game-limit-password-input').value;
+        
+        if (input === this.gameLimitAccessKey) {
+          // Grant access to game limit settings
+          this.hideGameLimitPasswordModal();
+          document.getElementById('game-limit-modal').style.display = 'flex';
+          updateGameLimitStatus();
+          return true;
+        } else {
+          // Wrong key
+          this.gameLimitPasswordAttempts--;
+          this.updateGameLimitPasswordAttempts();
+          
+          if (this.gameLimitPasswordAttempts <= 0) {
+            this.hideGameLimitPasswordModal();
+            alert("Maximum attempts reached! Access denied.");
+            // Reset button click count
+            this.gameLimitClickCount = 0;
+            const btn = document.getElementById('game-limit-btn-small');
+            btn.textContent = 'L';
+          } else {
+            document.getElementById('game-limit-password-attempts').style.display = 'block';
+            document.getElementById('game-limit-password-input').value = '';
+            document.getElementById('game-limit-password-input').focus();
+          }
+          return false;
+        }
+      }
+      
+      // Check if game limit is reached
+      isGameLimitReached() {
+        if (this.maxGames === null) return false;
+        return this.gamesPlayed >= this.maxGames;
+      }
+      
+      // Increment games played counter
+      incrementGamesPlayed() {
+        this.gamesPlayed++;
+        this.saveSetting('bingoGamesPlayed', this.gamesPlayed);
+        this.updateGameLimitDisplay();
+      }
+      
+      // Reset games played (requires password)
+      resetGamesPlayed() {
+        const username = prompt("Developer Username:");
+        const password = prompt("Developer Password:");
+        if (username !== "habtamumesele092@gmail.com" || password !== "0985819921Hab") {
+          alert("Incorrect developer credentials!");
+          return false;
+        }
+        this.gamesPlayed = 0;
+        this.saveSetting('bingoGamesPlayed', 0);
+        this.updateGameLimitDisplay();
+        alert("Games played counter has been reset to 0!");
+        return true;
+      }
+      
+      // Set game limit
+      setGameLimit(games) {
+        const username = prompt("Developer Username:");
+        const password = prompt("Developer Password:");
+        if (username !== "habtamumesele092@gmail.com" || password !== "0985819921Hab") {
+          alert("Incorrect developer credentials!");
+          return false;
+        }
+        
+        if (games <= 0) {
+          alert("Please enter a positive number of games!");
+          return false;
+        }
+        
+        this.maxGames = games;
+        this.saveSetting('bingoMaxGames', games);
+        this.updateGameLimitDisplay();
+        alert(`Game limit set to ${games} games!`);
+        return true;
+      }
+      
+      // Remove game limit (unlimited)
+      removeGameLimit() {
+        const username = prompt("Developer Username:");
+        const password = prompt("Developer Password:");
+        if (username !== "habtamumesele092@gmail.com" || password !== "0985819921Hab") {
+          alert("Incorrect developer credentials!");
+          return false;
+        }
+        
+        this.maxGames = null;
+        this.saveSetting('bingoMaxGames', null);
+        this.updateGameLimitDisplay();
+        alert("Game limit removed! Games are now unlimited.");
+        return true;
+      }
+      
+      // Update game limit display
+      updateGameLimitDisplay() {
+        const displayEl = document.getElementById('games-left-display');
+        if (!displayEl) return;
+        
+        if (this.maxGames === null) {
+          displayEl.textContent = "Games Left: Unlimited";
+          displayEl.style.color = "#64ffda";
+        } else {
+          const gamesLeft = Math.max(0, this.maxGames - this.gamesPlayed);
+          displayEl.textContent = `Games Left: ${gamesLeft}`;
+          
+          // Color coding based on remaining games
+          if (gamesLeft <= 1) {
+            displayEl.style.color = "#ff7043"; // Red
+          } else if (gamesLeft <= 2) {
+            displayEl.style.color = "#f1c40f"; // Yellow
+          } else {
+            displayEl.style.color = "#64ffda"; // Green
+          }
+        }
+      }
+      
+      // Show game limit warning
+      showGameLimitWarning() {
+        const msg = `GAME LIMIT REACHED! You have used all ${this.maxGames} games. Please purchase more games to continue.`;
+        document.getElementById('status').textContent = msg;
+        alert(msg);
+      }
+      
+      // Handle game limit button click with counter and password protection
+      handleGameLimitButtonClick() {
+        this.gameLimitClickCount++;
+        
+        // Show click count on button
+        const btn = document.getElementById('game-limit-btn-small');
+        if (this.gameLimitClickCount < 15) {
+          btn.innerHTML = `<span style="font-size:6px;line-height:1">${this.gameLimitClickCount}</span>`;
+        } else {
+          btn.textContent = 'L';
+        }
+        
+        // Add visual feedback
+        btn.style.transform = 'scale(1.15)';
+        btn.style.background = 'rgba(231, 76, 60, 0.9)';
+        
+        setTimeout(() => {
+          btn.style.transform = 'scale(1)';
+          btn.style.background = 'rgba(155, 89, 182, 0.9)';
+        }, 150);
+        
+        // Check if reached 15 clicks
+        if (this.gameLimitClickCount >= 10000000) {
+          this.gameLimitClickCount = 0;
+          btn.textContent = 'L';
+          
+          this.showGameLimitPasswordModal();
+          
+          this.gameLimitPasswordAttempts = 3;
+          this.updateGameLimitPasswordAttempts();
+          document.getElementById('game-limit-password-attempts').style.display = 'none';
+          document.getElementById('game-limit-password-input').value = '';
+          
+          // Play sound feedback
+          const audio = new Audio(this.getAudioFileName('g'));
+          audio.volume = 0.5;
+          audio.play().catch(() => {});
+        }
+      }
+      
+      // Load the original 50 player cards
+      loadOriginalPlayerCards() {
+        const originalPlayerCards = {
+          1: [[5,26,38,59,64],[12,28,40,46,62],[14,29,"FREE",50,75],[8,22,34,52,65],[2,19,36,51,61]],
+          2: [[3,30,40,50,73],[1,24,41,54,72],[11,21,"FREE",49,71],[4,26,35,46,63],[15,20,38,58,62]],
+          3: [[5,16,39,59,65],[7,27,33,54,64],[12,18,"FREE",56,63],[8,22,34,60,74],[3,28,40,51,71]],
+          4: [[3,27,32,57,69],[13,20,43,46,65],[15,28,"FREE",55,67],[2,22,38,52,64],[9,26,35,48,63]],
+          5: [[11,29,41,53,65],[3,22,40,49,70],[4,23,"FREE",56,69],[14,26,39,57,66],[1,25,36,59,62]],
+          6: [[6,18,33,54,72],[1,28,35,58,71],[10,25,"FREE",46,65],[14,26,44,53,68],[2,19,43,56,73]],
+          7: [[11,22,34,60,69],[9,16,37,47,61],[13,23,"FREE",48,72],[10,24,38,59,70],[4,26,31,51,68]],
+          8: [[7,23,38,54,64],[4,21,37,50,70],[8,26,"FREE",49,72],[14,30,31,46,68],[13,16,33,57,75]],
+          9: [[3,25,34,60,63],[1,21,35,52,61],[2,28,"FREE",59,64],[8,24,31,53,67],[6,16,32,51,69]],
+          10: [[11,24,38,58,75],[14,25,44,53,67],[8,26,"FREE",47,62],[1,16,39,56,72],[6,17,41,60,61]],
+          11: [[13,21,42,46,65],[14,26,40,57,68],[10,24,"FREE",52,67],[2,18,34,60,75],[5,19,35,50,73]],
+          12: [[14,29,37,57,71],[9,27,31,59,63],[4,26,"FREE",52,67],[7,18,34,54,73],[6,17,40,50,64]],
+          13: [[13,29,36,47,71],[2,16,33,54,74],[8,20,"FREE",57,68],[7,21,41,51,73],[3,19,39,52,69]],
+          14: [[9,26,45,58,68],[14,16,33,52,69],[7,21,"FREE",57,75],[2,28,44,56,66],[4,24,35,48,71]],
+          15: [[4,26,40,56,65],[6,30,43,49,72],[10,20,"FREE",60,69],[7,16,42,48,73],[12,18,33,47,74]],
+          16: [[8,30,45,48,74],[10,20,43,47,64],[11,19,"FREE",46,62],[13,22,36,53,67],[3,21,44,59,71]],
+          17: [[4,30,41,53,71],[10,26,33,46,67],[1,27,"FREE",58,72],[6,19,42,59,73],[7,21,38,50,70]],
+          18: [[12,26,45,55,62],[2,16,43,60,75],[14,20,"FREE",48,72],[4,24,40,51,73],[6,19,37,58,70]],
+          19: [[11,18,45,47,75],[13,30,40,46,63],[7,23,"FREE",55,74],[3,16,44,60,70],[1,29,33,53,69]],
+          20: [[13,19,35,52,75],[7,20,43,49,62],[1,25,"FREE",50,71],[6,18,36,55,63],[2,21,38,60,73]],
+          21: [[4,16,40,54,68],[9,20,35,58,65],[15,17,"FREE",57,62],[5,22,34,51,63],[1,18,33,48,66]],
+          22: [[13,30,39,47,62],[11,19,44,50,69],[4,18,"FREE",48,67],[12,25,33,59,74],[9,17,40,60,65]],
+          23: [[7,30,35,58,74],[15,23,41,51,63],[2,16,"FREE",50,73],[1,20,42,57,64],[9,19,44,59,66]],
+          24: [[8,25,45,56,74],[14,17,36,46,70],[13,27,"FREE",58,68],[12,19,32,55,66],[10,30,37,51,72]],
+          25: [[11,24,42,57,66],[1,22,39,50,63],[4,18,"FREE",52,70],[7,25,31,56,67],[14,23,33,60,75]],
+          26: [[15,17,37,52,62],[4,21,44,51,75],[6,18,"FREE",54,61],[10,19,38,56,73],[13,24,35,57,70]],
+          27: [[9,27,43,51,75],[1,28,36,47,62],[12,30,"FREE",56,70],[5,24,35,48,69],[11,26,33,46,74]],
+          28: [[8,29,40,46,66],[13,16,35,47,62],[9,23,"FREE",53,68],[3,20,38,55,64],[14,22,33,57,75]],
+          29: [[1,17,43,46,74],[15,16,45,55,62],[11,25,"FREE",48,67],[4,26,31,54,70],[12,27,33,53,75]],
+          30: [[6,29,42,46,62],[3,30,35,55,66],[14,16,"FREE",47,63],[1,23,44,56,69],[7,26,37,48,64]],
+          31: [[9,21,37,60,63],[3,24,35,46,70],[13,18,"FREE",47,72],[11,19,36,56,62],[10,17,32,55,66]],
+          32: [[7,24,36,48,73],[4,20,44,60,75],[11,26,"FREE",54,68],[1,18,42,57,71],[15,28,32,58,64]],
+          33: [[2,19,33,48,62],[14,28,34,54,63],[5,29,"FREE",57,65],[3,23,35,46,69],[15,27,37,49,66]],
+          34: [[1,27,37,48,73],[14,20,35,50,63],[9,30,"FREE",60,72],[13,17,43,51,66],[8,21,33,47,64]],
+          35: [[8,29,33,55,69],[10,19,32,48,61],[6,16,"FREE",60,64],[5,24,41,54,62],[15,26,43,53,67]],
+          36: [[10,28,42,49,66],[8,26,40,59,75],[9,20,"FREE",51,63],[13,18,41,47,61],[5,19,43,52,64]],
+          37: [[11,27,39,55,68],[15,24,41,60,67],[9,21,"FREE",56,61],[3,30,43,47,75],[12,29,42,57,71]],
+          38: [[11,27,42,53,65],[3,21,36,60,69],[8,22,"FREE",57,72],[13,19,39,46,63],[6,23,45,50,67]],
+          39: [[6,27,34,59,61],[13,21,42,53,71],[15,18,"FREE",57,65],[9,29,38,50,64],[3,25,33,54,62]],
+          40: [[14,27,36,53,65],[12,26,34,57,61],[8,24,"FREE",49,63],[10,28,43,51,75],[2,20,38,59,67]],
+          41: [[14,18,31,52,65],[7,17,33,56,61],[4,20,"FREE",60,71],[6,23,43,46,75],[2,25,39,59,73]],
+          42: [[13,25,44,58,62],[15,24,31,48,67],[7,30,"FREE",50,65],[2,23,42,54,68],[8,26,32,59,69]],
+          43: [[4,24,34,55,66],[3,25,35,48,71],[12,18,"FREE",60,70],[15,29,45,54,72],[6,17,43,58,67]],
+          44: [[1,27,44,53,62],[7,19,45,52,74],[14,24,"FREE",51,73],[6,30,42,56,66],[5,26,36,57,69]],
+          45: [[4,18,33,52,73],[2,27,35,50,66],[7,30,"FREE",60,64],[11,26,38,47,72],[1,19,42,48,65]],
+          46: [[5,30,44,46,75],[8,16,34,50,65],[1,22,"FREE",48,73],[10,29,36,56,61],[9,20,39,55,62]],
+          47: [[7,16,43,50,65],[9,26,37,58,72],[12,19,"FREE",48,68],[3,24,36,49,63],[5,23,41,60,61]],
+          48: [[5,19,40,60,75],[9,24,33,57,66],[15,29,"FREE",49,64],[14,17,45,58,69],[6,25,34,56,73]],
+          49: [[13,27,33,57,73],[12,16,38,47,63],[15,24,"FREE",60,72],[6,18,40,55,71],[9,26,35,53,61]],
+          50: [[7,16,38,51,64],[14,25,42,53,74],[4,18,"FREE",55,72],[11,24,33,57,68],[8,19,40,52,67]]    
+        };
+        
+        Object.keys(originalPlayerCards).forEach(id => {
+          this.allPlayerCards[id] = originalPlayerCards[id];
+        });
+        
+        this.loadManualCards();
+      }
+      
+      // Load manually added cards from localStorage
+      loadManualCards() {
+        const savedManualCards = this.loadSetting('bingoManualCards', {});
+        Object.keys(savedManualCards).forEach(id => {
+          this.allPlayerCards[id] = savedManualCards[id];
+        });
+      }
+      
+      // ENHANCED: More complex shuffling algorithm
+      enhancedShuffle() {
+        const allNumbers = Array.from({ length: 75 }, (_, i) => i + 1);
+        
+        const rows = {
+          'B': allNumbers.filter(n => n >= 1 && n <= 15),
+          'I': allNumbers.filter(n => n >= 16 && n <= 30),
+          'N': allNumbers.filter(n => n >= 31 && n <= 45),
+          'G': allNumbers.filter(n => n >= 46 && n <= 60),
+          'O': allNumbers.filter(n => n >= 61 && n <= 75)
+        };
+        
+        Object.keys(rows).forEach(row => {
+          rows[row] = this.shuffleArray(rows[row]);
+        });
+        
+        const shuffled = [];
+        const rowKeys = Object.keys(rows);
+        
+        for (let pass = 0; pass < 3; pass++) {
+          for (let i = 0; i < 15; i++) {
+            if (pass === 0) {
+              rowKeys.forEach(row => {
+                if (rows[row].length > 0) {
+                  shuffled.push(rows[row].pop());
+                }
+              });
+            } else if (pass === 1) {
+              [...rowKeys].reverse().forEach(row => {
+                if (rows[row].length > 0) {
+                  shuffled.push(rows[row].pop());
+                }
+              });
+            } else {
+              const availableRows = rowKeys.filter(row => rows[row].length > 0);
+              if (availableRows.length > 0) {
+                const weights = availableRows.map(row => rows[row].length);
+                const totalWeight = weights.reduce((a, b) => a + b, 0);
+                let random = Math.random() * totalWeight;
+                
+                let selectedRow = availableRows[0];
+                for (let j = 0; j < availableRows.length; j++) {
+                  random -= weights[j];
+                  if (random <= 0) {
+                    selectedRow = availableRows[j];
+                    break;
+                  }
+                }
+                
+                shuffled.push(rows[selectedRow].pop());
+              }
+            }
+          }
+        }
+        
+        return this.shuffleArray(shuffled);
+      }
+      
+      // ENHANCED: Get next number with row avoidance
+      getNextNumber() {
+        if (this.shuffledNumbers.length === 0) return null;
+        
+        if (this.calledNumbers.length > 0) {
+          const lastCalled = this.calledNumbers[this.calledNumbers.length - 1];
+          const lastRow = this.getLetterForNumber(lastCalled);
+          
+          const differentRowNumbers = this.shuffledNumbers.filter(num => 
+            this.getLetterForNumber(num) !== lastRow
+          );
+          
+          if (differentRowNumbers.length > 0) {
+            const selectedIndex = this.shuffledNumbers.indexOf(differentRowNumbers[0]);
+            if (selectedIndex !== -1) {
+              return this.shuffledNumbers.splice(selectedIndex, 1)[0];
+            }
+          }
+        }
+        
+        return this.shuffledNumbers.pop();
+      }
+      
+      saveSetting(key, value) {
+        localStorage.setItem(key, JSON.stringify(value));
+      }
+      
+      loadSetting(key, defaultValue) {
+        const saved = localStorage.getItem(key);
+        return saved ? JSON.parse(saved) : defaultValue;
+      }
+      
+      shuffleArray(array) {
+        const arr = [...array];
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+      }
+      
+      generateBingoCard() {
+        const card = [];
+        const ranges = [[1,15],[16,30],[31,45],[46,60],[61,75]];
+        for (let col = 0; col < 5; col++) {
+          const [min, max] = ranges[col];
+          const columnNumbers = this.shuffleArray(Array.from({ length: max - min + 1 }, (_, i) => i + min)).slice(0, 5);
+          if (col === 2) columnNumbers[2] = 'FREE';
+          card.push(columnNumbers);
+        }
+        const rows = [];
+        for (let row = 0; row < 5; row++) rows.push(card.map(col => col[row]));
+        return rows;
+      }
+      
+      getOrGenerateCard(id) {
+        if (this.allPlayerCards[id]) {
+          return this.allPlayerCards[id];
+        }
+        
+        if (!this.allPlayerCards[id]) {
+          this.allPlayerCards[id] = this.generateBingoCard();
+        }
+        return this.allPlayerCards[id];
+      }
+      
+      // Save a manually entered card
+      saveManualCard(playerId, cardData) {
+        this.allPlayerCards[playerId] = cardData;
+        this.saveSetting('bingoManualCards', this.allPlayerCards);
+      }
+      
+      getLetterForNumber(num) {
+        if (num >= 1 && num <= 15) return 'B';
+        if (num >= 16 && num <= 30) return 'I';
+        if (num >= 31 && num <= 45) return 'N';
+        if (num >= 46 && num <= 60) return 'G';
+        if (num >= 61 && num <= 75) return 'O';
+        return 'X';
+      }
+
+      // FIXED: Update player called status to only mark numbers that have been called
+      updatePlayerCalledStatus(player) {
+        for (let i = 0; i < 5; i++) {
+          for (let j = 0; j < 5; j++) {
+            player.called[i][j] = false;
+          }
+        }
+        
+        player.called[2][2] = true;
+        
+        for (let i = 0; i < 5; i++) {
+          for (let j = 0; j < 5; j++) {
+            const cell = player.card[i][j];
+            if (typeof cell === 'number' && this.calledNumbers.includes(cell)) {
+              player.called[i][j] = true;
+            }
+          }
+        }
+      }
+
+      // FIXED: Check win conditions using only called numbers
+      checkWin(player) {
+        this.updatePlayerCalledStatus(player);
+        
+        const called = player.called;
+        const card = player.card;
+        
+        switch(this.winningRule) {
+          case 'anyLine':
+            for (let i = 0; i < 5; i++) {
+              if (called[i].every(cell => cell)) return true;
+            }
+            for (let j = 0; j < 5; j++) {
+              if (called.every(row => row[j])) return true;
+            }
+            if (called[0][0] && called[1][1] && called[2][2] && called[3][3] && called[4][4]) return true;
+            if (called[0][4] && called[1][3] && called[2][2] && called[3][1] && called[4][0]) return true;
+            return false;
+            
+          case 'fourCorners': 
+            return called[0][0] && called[0][4] && called[4][0] && called[4][4];
+            
+          case 'fullHouse':
+            for (let i = 0; i < 5; i++) {
+              for (let j = 0; j < 5; j++) {
+                if (card[i][j] !== 'FREE' && !called[i][j]) return false;
+              }
+            }
+            return true;
+            
+          case 'diagonal':
+            return (called[0][0] && called[1][1] && called[2][2] && called[3][3] && called[4][4]) ||
+                   (called[0][4] && called[1][3] && called[2][2] && called[3][1] && called[4][0]);
+            
+          case 'letterX':
+            return (called[0][0] && called[1][1] && called[2][2] && called[3][3] && called[4][4]) &&
+                   (called[0][4] && called[1][3] && called[2][2] && called[3][1] && called[4][0]);
+            
+          case 'anyLineOrFourCorners':
+            for (let i = 0; i < 5; i++) {
+              if (called[i].every(cell => cell)) return true;
+            }
+            for (let j = 0; j < 5; j++) {
+              if (called.every(row => row[j])) return true;
+            }
+            if (called[0][0] && called[1][1] && called[2][2] && called[3][3] && called[4][4]) return true;
+            if (called[0][4] && called[1][3] && called[2][2] && called[3][1] && called[4][0]) return true;
+            if (called[0][0] && called[0][4] && called[4][0] && called[4][4]) return true;
+            return false;
+            
+          default: return false;
+        }
+      }
+      
+      highlightWinningPatternOnCard(cardElement, calledMatrix, rule) {
+        cardElement.querySelectorAll('.win-highlight').forEach(el => el.classList.remove('win-highlight'));
+        const cells = cardElement.querySelectorAll('.bingo-cell');
+        const addHighlight = (row, col) => {
+          const index = row * 5 + col;
+          if (cells[index]) cells[index].classList.add('win-highlight');
+        };
+        switch (rule) {
+          case 'anyLine':
+            for (let r = 0; r < 5; r++) {
+              if (calledMatrix[r].every(c => c)) {
+                for (let c = 0; c < 5; c++) addHighlight(r, c);
+                return;
+              }
+            }
+            for (let c = 0; c < 5; c++) {
+              if (calledMatrix.every(row => row[c])) {
+                for (let r = 0; r < 5; r++) addHighlight(r, c);
+                return;
+              }
+            }
+            if (calledMatrix[0][0] && calledMatrix[1][1] && calledMatrix[2][2] && calledMatrix[3][3] && calledMatrix[4][4]) {
+              for (let i = 0; i < 5; i++) addHighlight(i, i);
+              return;
+            }
+            if (calledMatrix[0][4] && calledMatrix[1][3] && calledMatrix[2][2] && calledMatrix[3][1] && calledMatrix[4][0]) {
+              for (let i = 0; i < 5; i++) addHighlight(i, 4 - i);
+              return;
+            }
+            break;
+          case 'fourCorners':
+            addHighlight(0, 0);
+            addHighlight(0, 4);
+            addHighlight(4, 0);
+            addHighlight(4, 4);
+            break;
+          case 'fullHouse':
+            for (let r = 0; r < 5; r++)
+              for (let c = 0; c < 5; c++)
+                if (cardElement.querySelectorAll('.bingo-cell')[r * 5 + c].textContent !== 'FREE')
+                  addHighlight(r, c);
+            break;
+          case 'diagonal':
+            if (calledMatrix[0][0] && calledMatrix[1][1] && calledMatrix[2][2] && calledMatrix[3][3] && calledMatrix[4][4]) {
+              for (let i = 0; i < 5; i++) addHighlight(i, i);
+            } else if (calledMatrix[0][4] && calledMatrix[1][3] && calledMatrix[2][2] && calledMatrix[3][1] && calledMatrix[4][0]) {
+              for (let i = 0; i < 5; i++) addHighlight(i, 4 - i);
+            }
+            break;
+          case 'letterX':
+            for (let i = 0; i < 5; i++) {
+              addHighlight(i, i);
+              addHighlight(i, 4 - i);
+            }
+            break;
+          case 'anyLineOrFourCorners':
+            for (let r = 0; r < 5; r++) {
+              if (calledMatrix[r].every(c => c)) {
+                for (let c = 0; c < 5; c++) addHighlight(r, c);
+                return;
+              }
+            }
+            for (let c = 0; c < 5; c++) {
+              if (calledMatrix.every(row => row[c])) {
+                for (let r = 0; r < 5; r++) addHighlight(r, c);
+                return;
+              }
+            }
+            if (calledMatrix[0][0] && calledMatrix[1][1] && calledMatrix[2][2] && calledMatrix[3][3] && calledMatrix[4][4]) {
+              for (let i = 0; i < 5; i++) addHighlight(i, i);
+              return;
+            }
+            if (calledMatrix[0][4] && calledMatrix[1][3] && calledMatrix[2][2] && calledMatrix[3][1] && calledMatrix[4][0]) {
+              for (let i = 0; i < 5; i++) addHighlight(i, 4 - i);
+              return;
+            }
+            if (calledMatrix[0][0] && calledMatrix[0][4] && calledMatrix[4][0] && calledMatrix[4][4]) {
+              addHighlight(0, 0);
+              addHighlight(0, 4);
+              addHighlight(4, 0);
+              addHighlight(4, 4);
+              return;
+            }
+            break;
+        }
+      }
+      
+      checkIfPlayerCanWin(playerId) {
+        if (this.isGameLimitReached()) {
+          this.showGameLimitWarning();
+          return;
+        }
+        
+        const selectedPlayer = this.players.find(p => p.id === playerId);
+        if (!selectedPlayer) {
+          const audio = new Audio(this.getAudioFileName('c'));
+          audio.volume = 1;
+          this.isSpeaking = true;
+          document.getElementById('speaking-indicator').style.display = 'block';
+          const onEnd = () => {
+            this.isSpeaking = false;
+            document.getElementById('speaking-indicator').style.display = 'none';
+          };
+          audio.onended = onEnd;
+          audio.onerror = onEnd;
+          audio.play().catch(onEnd);
+          return;
+        }
+        
+        this.updatePlayerCalledStatus(selectedPlayer);
+        
+        const canWin = this.checkWin(selectedPlayer);
+        const audio = new Audio(canWin ? this.getAudioFileName('a') : this.getAudioFileName('b'));
+        audio.volume = 1;
+        this.isSpeaking = true; document.getElementById('speaking-indicator').style.display = 'block';
+        const onEnd = () => {
+          this.isSpeaking = false; document.getElementById('speaking-indicator').style.display = 'none';
+        };
+        audio.onended = onEnd;
+        audio.onerror = () => {
+          this.isSpeaking = false; document.getElementById('speaking-indicator').style.display = 'none';
+          let lang = 'en-US', text = canWin ? `Yes! Player ${playerId} can win!` : `No. Player ${playerId} cannot win yet.`;
+          if (this.preferredLanguage === 'am') {
+            lang = 'am';
+            text = canWin ? `አዎ! ተጫዋቾ ${playerId} ሊያሸንፍ ይችላል!` : `አይደለም። ተጫዋቾ ${playerId} እስካሁን ሊያሸንፍ አይችልም።`;
+          }
+          this.speak(text, lang);
+        };
+        audio.play().catch(e => {
+          this.isSpeaking = false; document.getElementById('speaking-indicator').style.display = 'none';
+          let lang = 'en-US', text = canWin ? `Yes! Player ${playerId} can win!` : `No. Player ${playerId} cannot win yet.`;
+          if (this.preferredLanguage === 'am') {
+            lang = 'am';
+            text = canWin ? `አዎ! ተጫዋቾ ${playerId} ሊያሸንፍ ይችላል!` : `አይደለም። ተጫዋቾ ${playerId} እስካሁን ሊያሸንፍ አይችልም።`;
+          }
+          this.speak(text, lang);
+        });
+        if (canWin) {
+          let modal = document.getElementById('winner-fullscreen-modal');
+          if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'winner-fullscreen-modal';
+            document.body.appendChild(modal);
+          }
+          const largeCard = document.createElement('div');
+          largeCard.style.cssText = `
+            background: #222; color: #f0f0f0; padding: 20px; border-radius: 12px;
+            display: inline-grid; grid-template-columns: repeat(5, 1fr); gap: 6px;
+            font-size: 24px; font-weight: bold; max-width: 90vw;
+          `;
+          const headers = ['B','I','N','G','O'];
+          headers.forEach(h => {
+            const head = document.createElement('div');
+            head.className = 'bingo-header';
+            head.textContent = h;
+            largeCard.appendChild(head);
+          });
+          selectedPlayer.card.flat().forEach((cell, idx) => {
+            const cellEl = document.createElement('div');
+            cellEl.textContent = cell;
+            cellEl.className = 'bingo-cell';
+            if (cell === 'FREE') cellEl.classList.add('free');
+            else if (typeof cell === 'number' && this.calledNumbers.includes(cell)) {
+              cellEl.classList.add('called');
+            }
+            largeCard.appendChild(cellEl);
+          });
+          this.highlightWinningPatternOnCard(largeCard, selectedPlayer.called, this.winningRule);
+          modal.innerHTML = `
+            <h2>🎉 Congratulations! Player ${playerId} Wins! 🎉</h2>
+            <p>Winning Rule: ${this.winningRule}</p>
+          `;
+          modal.appendChild(largeCard);
+          const closeBtn = document.createElement('button');
+          closeBtn.textContent = 'Close';
+          closeBtn.style.cssText = `
+            margin-top: 24px; padding: 10px 20px; font-size: 18px; background: #e74c3c; color: white;
+            border: none; border-radius: 6px; cursor: pointer;
+          `;
+          closeBtn.onclick = () => modal.style.display = 'none';
+          modal.appendChild(closeBtn);
+          modal.style.display = 'flex';
+        }
+      }
+      
+      updateDisplay() {
+        const displayEl = document.getElementById('called-display');
+        if (this.calledNumbers.length === 0) {
+          displayEl.innerHTML = '<span>--</span>';
+        } else {
+          const lastNum = this.calledNumbers[this.calledNumbers.length - 1];
+          const lastLetter = this.getLetterForNumber(lastNum);
+          displayEl.innerHTML = `<span>${lastLetter}-${lastNum}</span>`;
+        }
+        const grid = document.getElementById('all-numbers-grid');
+        if (grid.innerHTML === '') {
+          const rows = [
+            { letter: 'B', range: [1, 15], rowClass: 'b-row' },
+            { letter: 'I', range: [16, 30], rowClass: 'i-row' },
+            { letter: 'N', range: [31, 45], rowClass: 'n-row' },
+            { letter: 'G', range: [46, 60], rowClass: 'g-row' },
+            { letter: 'O', range: [61, 75], rowClass: 'o-row' }
+          ];
+          
+          rows.forEach(row => {
+            const letterEl = document.createElement('div');
+            letterEl.className = `row-letter ${row.letter.toLowerCase()}`;
+            letterEl.textContent = row.letter;
+            grid.appendChild(letterEl);
+            
+            for (let i = row.range[0]; i <= row.range[1]; i++) {
+              const badge = document.createElement('div');
+              badge.className = `number-badge ${row.rowClass}`;
+              badge.dataset.number = i;
+              
+              const numberEl = document.createElement('div');
+              numberEl.className = 'number';
+              numberEl.textContent = i;
+              
+              badge.appendChild(numberEl);
+              grid.appendChild(badge);
+            }
+          });
+        }
+        const badges = grid.querySelectorAll('.number-badge');
+        badges.forEach(badge => {
+          const num = parseInt(badge.dataset.number);
+          if (this.calledNumbers.includes(num)) {
+            badge.classList.add('called');
+          } else {
+            badge.classList.remove('called');
+          }
+        });
+        this.updateRecentAndReward();
+      }
+      
+      highlightCalledNumbers() {
+        this.players.forEach(player => {
+          this.updatePlayerCalledStatus(player);
+        });
+      }
+      
+      renderPlayerCards() {}
+      
+      renderPlayerSelection() {
+        const listEl = document.getElementById('player-list-float');
+        listEl.innerHTML = '';
+        for (let i = 1; i <= 150; i++) {
+          const circle = document.createElement('div');
+          circle.className = 'player-circle';
+          circle.textContent = i;
+          circle.dataset.id = i;
+          circle.addEventListener('click', () => {
+            circle.classList.toggle('selected');
+            this.updatePlayersFromSelection();
+          });
+          listEl.appendChild(circle);
+        }
+      }
+      
+      renderFullScreenPlayers() {
+        const gridEl = document.getElementById('players-fullscreen-grid');
+        gridEl.innerHTML = '';
+        for (let i = 1; i <= 150; i++) {
+          const playerEl = document.createElement('div');
+          playerEl.className = 'player-fullscreen';
+          playerEl.textContent = i;
+          playerEl.dataset.id = i;
+          playerEl.addEventListener('click', () => {
+            playerEl.classList.toggle('selected');
+            this.updatePlayersFromFullScreen();
+          });
+          gridEl.appendChild(playerEl);
+        }
+      }
+      
+      updatePlayersFromSelection() {
+        const selectedCircles = document.querySelectorAll('.player-circle.selected');
+        this.players = [];
+        selectedCircles.forEach(circle => {
+          const id = parseInt(circle.dataset.id);
+          const card = this.getOrGenerateCard(id);
+          const called = Array(5).fill().map(() => Array(5).fill(false));
+          called[2][2] = true;
+          this.players.push({ id, card, called });
+        });
+        document.getElementById('winner-display').style.display = 'none';
+        this.updatePlayerCountDisplay();
+        this.updateRecentAndReward();
+      }
+      
+      updatePlayersFromFullScreen() {
+        const selectedPlayers = document.querySelectorAll('.player-fullscreen.selected');
+        this.players = [];
+        selectedPlayers.forEach(playerEl => {
+          const id = parseInt(playerEl.dataset.id);
+          const card = this.getOrGenerateCard(id);
+          const called = Array(5).fill().map(() => Array(5).fill(false));
+          called[2][2] = true;
+          this.players.push({ id, card, called });
+        });
+        document.getElementById('winner-display').style.display = 'none';
+        this.updatePlayerCountDisplay();
+        this.updateFullScreenPlayerCount();
+        this.updateRecentAndReward();
+      }
+      
+      updatePlayerCountDisplay() {
+        const count = this.players.length;
+        document.getElementById('players-btn').textContent = `PLAYERS: ${count}`;
+      }
+      
+      updateFullScreenPlayerCount() {
+        const count = this.players.length;
+        document.getElementById('players-fullscreen-count').textContent = `Selected: ${count} players`;
+      }
+      
+      selectAllPlayers() {
+        document.querySelectorAll('.player-fullscreen').forEach(player => {
+          player.classList.add('selected');
+        });
+        this.updatePlayersFromFullScreen();
+      }
+      
+      deselectAllPlayers() {
+        document.querySelectorAll('.player-fullscreen').forEach(player => {
+          player.classList.remove('selected');
+        });
+        this.updatePlayersFromFullScreen();
+      }
+      
+      clearAllPlayers() {
+        document.querySelectorAll('.player-circle.selected').forEach(circle => {
+          circle.classList.remove('selected');
+        });
+        document.querySelectorAll('.player-fullscreen.selected').forEach(player => {
+          player.classList.remove('selected');
+        });
+        this.players = [];
+        this.updatePlayerCountDisplay();
+        this.updateFullScreenPlayerCount();
+        this.updateRecentAndReward();
+      }
+      
+      showPlayerCard(playerId) {
+        const card = this.getOrGenerateCard(playerId);
+        const called = Array(5).fill().map(() => Array(5).fill(false));
+        called[2][2] = true;
+        
+        card.forEach((row, rowIndex) => {
+          row.forEach((cell, colIndex) => {
+            if (typeof cell === 'number' && this.calledNumbers.includes(cell)) {
+              called[rowIndex][colIndex] = true;
+            }
+          });
+        });
+        
+        const grid = document.getElementById('player-card-grid');
+        grid.innerHTML = '';
+        
+        const headers = ['B', 'I', 'N', 'G', 'O'];
+        headers.forEach(header => {
+          const headerCell = document.createElement('div');
+          headerCell.className = 'player-card-cell';
+          headerCell.textContent = header;
+          headerCell.style.background = '#3498db';
+          headerCell.style.color = 'white';
+          grid.appendChild(headerCell);
+        });
+        
+        card.flat().forEach((cell, idx) => {
+          const cellEl = document.createElement('div');
+          cellEl.className = 'player-card-cell';
+          cellEl.textContent = cell;
+          
+          if (cell === 'FREE') {
+            cellEl.classList.add('free');
+          } else if (typeof cell === 'number' && this.calledNumbers.includes(cell)) {
+            cellEl.classList.add('called');
+          }
+          
+          grid.appendChild(cellEl);
+        });
+        
+        document.getElementById('player-card-id').textContent = playerId;
+        
+        const canWin = this.checkWin({ card, called });
+        const statusEl = document.getElementById('player-card-status');
+        statusEl.className = `player-card-status ${canWin ? 'winning' : 'not-winning'}`;
+        statusEl.textContent = canWin ? 
+          `🎉 Player ${playerId} can win with the current numbers!` : 
+          `Player ${playerId} cannot win yet with the current numbers.`;
+        
+        document.getElementById('player-card-display').style.display = 'block';
+      }
+      
+      showNumberPopup(num) {
+        const popup = document.getElementById('number-popup');
+        const letter = this.getLetterForNumber(num);
+        
+        document.getElementById('popup-letter').textContent = letter;
+        document.getElementById('popup-number').textContent = num;
+        
+        let gradient = '';
+        switch(letter) {
+          case 'B':
+            gradient = 'linear-gradient(135deg, #e74c3c, #c0392b)';
+            break;
+          case 'I':
+            gradient = 'linear-gradient(135deg, #2ecc71, #27ae60)';
+            break;
+          case 'N':
+            gradient = 'linear-gradient(135deg, #f1c40f, #f39c12)';
+            break;
+          case 'G':
+            gradient = 'linear-gradient(135deg, #9b59b6, #8e44ad)';
+            break;
+          case 'O':
+            gradient = 'linear-gradient(135deg, #3498db, #2980b9)';
+            break;
+          default:
+            gradient = 'linear-gradient(135deg, #2980b9, #1a5276)';
+        }
+        
+        popup.style.background = gradient;
+        popup.style.display = 'flex';
+        
+        // UPDATED: Decreased display time from 3000ms to 1500ms
+        setTimeout(() => {
+          this.hideNumberPopup();
+        }, 1500);
+      }
+      
+      hideNumberPopup() {
+        const popup = document.getElementById('number-popup');
+        popup.classList.add('hiding');
+        
+        setTimeout(() => {
+          popup.style.display = 'none';
+          popup.classList.remove('hiding');
+        }, 300);
+      }
+      
+      // NEW: Refresh functionality
+      refresh() {
+        const refreshAudio = new Audio(this.getAudioFileName('g'));
+        refreshAudio.volume = 1;
+        this.isSpeaking = true;
+        document.getElementById('speaking-indicator').style.display = 'block';
+        
+        const onEnd = () => {
+          this.isSpeaking = false;
+          document.getElementById('speaking-indicator').style.display = 'none';
+        };
+        
+        refreshAudio.onended = onEnd;
+        refreshAudio.onerror = () => {
+          this.isSpeaking = false;
+          document.getElementById('speaking-indicator').style.display = 'none';
+          const text = "Refreshing!";
+          const lang = 'en-US';
+          this.speak(text, lang, onEnd);
+        };
+        
+        refreshAudio.play().catch(e => {
+          this.isSpeaking = false;
+          document.getElementById('speaking-indicator').style.display = 'none';
+          const text = "Refreshing!";
+          const lang = 'en-US';
+          this.speak(text, lang, onEnd);
+        });
+        
+        this.startRefreshAnimation();
+      }
+      
+      // NEW: Start refresh animation
+      startRefreshAnimation() {
+        const badges = document.querySelectorAll('.number-badge');
+        
+        badges.forEach(badge => {
+          badge.classList.add('refresh-blinking');
+        });
+        
+        setTimeout(() => {
+          badges.forEach(badge => {
+            badge.classList.remove('refresh-blinking');
+          });
+        }, 3000);
+      }
+      
+      // UPDATED: Stop auto-play immediately
+      stopAutoPlay() {
+        if (this.autoInterval) { 
+          clearInterval(this.autoInterval); 
+          this.autoInterval = null; 
+        }
+        this.autoPlaying = false;
+        this.autoPlayReady = false;
+        
+        // Clear any ongoing audio
+        if (typeof speechSynthesis !== 'undefined') {
+          speechSynthesis.cancel();
+        }
+        
+        // Update UI immediately
+        const btn = document.getElementById('auto-btn');
+        btn.textContent = 'Start Auto Play';
+        btn.classList.remove('stop');
+        this.updateFloatingPlayText();
+        
+        // Clear speaking indicator
+        this.isSpeaking = false;
+        document.getElementById('speaking-indicator').style.display = 'none';
+      }
+      
+      // UPDATED: Start auto-play with immediate UI feedback
+      startAutoPlay() {
+        if (this.isGameLimitReached()) {
+          this.showGameLimitWarning();
+          return;
+        }
+        
+        if (this.autoPlaying) return;
+        
+        // Update UI immediately
+        this.autoPlaying = true;
+        const btn = document.getElementById('auto-btn');
+        btn.textContent = 'Stop Auto Play';
+        btn.classList.add('stop');
+        this.updateFloatingPlayText();
+        
+        // Play start sound
+        const gameStartAudio = new Audio(this.getAudioFileName('0'));
+        gameStartAudio.volume = 1;
+        this.isSpeaking = true;
+        document.getElementById('speaking-indicator').style.display = 'block';
+        
+        const onEnd = () => {
+          this.isSpeaking = false;
+          document.getElementById('speaking-indicator').style.display = 'none';
+          
+          // Start auto-play after the start sound finishes
+          if (this.autoPlaying) { // Check if still supposed to be playing
+            this.autoInterval = setInterval(() => {
+              this.callNextNumber();
+              if (this.shuffledNumbers.length === 0) this.stopAutoPlay();
+            }, this.autoIntervalMs);
+          }
+        };
+        
+        gameStartAudio.onended = onEnd;
+        gameStartAudio.onerror = () => {
+          this.isSpeaking = false;
+          document.getElementById('speaking-indicator').style.display = 'none';
+          const text = "Bingo game started!";
+          const lang = 'en-US';
+          this.speak(text, lang, onEnd);
+        };
+        
+        gameStartAudio.play().catch(e => {
+          this.isSpeaking = false;
+          document.getElementById('speaking-indicator').style.display = 'none';
+          const text = "Bingo game started!";
+          const lang = 'en-US';
+          this.speak(text, lang, onEnd);
+        });
+      }
+      
+      // UPDATED: Toggle auto-play - stops immediately when pressed while playing
+      toggleAutoPlay() {
+        if (this.autoPlaying) {
+          // If already playing, stop it immediately
+          this.stopAutoPlay();
+          
+          // Optional: Play stop sound
+          const stopAudio = new Audio(this.getAudioFileName('e'));
+          stopAudio.volume = 0.5;
+          stopAudio.play().catch(() => {});
+        } else {
+          // Start auto-play
+          this.startAutoPlay();
+        }
+      }
+      
+      clearAudio() {
+        if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
+        this.isSpeaking = false;
+        document.getElementById('speaking-indicator').style.display = 'none';
+      }
+      
+      updateRulesDescription() {}
+      
+      loadVoices() {
+        if (typeof speechSynthesis === 'undefined') return;
+        const populate = () => {
+          const voiceSelect = document.getElementById('voice-type-select-float');
+          voiceSelect.innerHTML = '<option value="">Select Voice Type</option>';
+          const voices = speechSynthesis.getVoices().sort((a, b) => {
+            if (a.lang.startsWith('am') && !b.lang.startsWith('am')) return -1;
+            if (b.lang.startsWith('am') && !a.lang.startsWith('am')) return 1;
+            return a.name.localeCompare(b.name);
+          });
+          voices.forEach(voice => {
+            const option = document.createElement('option');
+            option.value = voice.voiceURI || voice.name;
+            let label = `${voice.name} (${voice.lang})`;
+            if (voice.default) label += ' — Default';
+            option.textContent = label;
+            voiceSelect.appendChild(option);
+          });
+          this.voicesLoaded = true;
+        };
+        populate();
+        speechSynthesis.onvoiceschanged = populate;
+      }
+      
+      loadCustomAudio(file) {
+        if (!file) return;
+        if (!file.type.startsWith('audio/')) { alert('Please select an audio file'); return; }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          this.customAudio = e.target.result;
+          document.getElementById('audio-file-info').textContent = `Loaded: ${file.name}`;
+          document.getElementById('audio-file-info').style.display = 'block';
+        };
+        reader.onerror = () => { alert('Error reading audio file'); };
+        reader.readAsDataURL(file);
+      }
+      
+      updateIntervalDisplay() {
+        const seconds = this.autoIntervalMs / 1000;
+        document.getElementById('interval-display').textContent = `${seconds}s`;
+      }
+      
+      setAutoIntervalMs(ms) {
+        this.autoIntervalMs = Math.min(15000, Math.max(10, ms));
+        this.saveSetting('bingoAutoInterval', this.autoIntervalMs);
+        this.updateIntervalDisplay();
+        if (this.autoPlaying) { this.stopAutoPlay(); this.startAutoPlay(); }
+      }
+      
+      increaseInterval() { this.setAutoIntervalMs(this.autoIntervalMs + 10); }
+      decreaseInterval() { this.setAutoIntervalMs(this.autoIntervalMs - 10); }
+      
+      setSpeedPreset(ms) {
+        this.setAutoIntervalMs(ms);
+        document.getElementById('speed-settings-modal').style.display = 'none';
+      }
+      
+      speak(text, lang, onEnd = null) {
+        if (typeof speechSynthesis === 'undefined') { if (onEnd) onEnd(); return; }
+        this.clearAudio(); this.isSpeaking = true; document.getElementById('speaking-indicator').style.display = 'block';
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = lang; utterance.rate = lang.startsWith('am') ? 0.8 : 0.9; utterance.pitch = 1; utterance.volume = 1;
+        if (this.selectedVoiceURI) {
+          const voices = speechSynthesis.getVoices();
+          const matched = voices.find(v => v.voiceURI === this.selectedVoiceURI || v.name === this.selectedVoiceURI);
+          if (matched) utterance.voice = matched;
+        }
+        utterance.onend = () => { this.isSpeaking = false; document.getElementById('speaking-indicator').style.display = 'none'; if (onEnd) onEnd(); };
+        utterance.onerror = () => { this.isSpeaking = false; document.getElementById('speaking-indicator').style.display = 'none'; if (onEnd) onEnd(); };
+        speechSynthesis.speak(utterance);
+      }
+      
+      playCustomAudio(onEnd = null) {
+        if (!this.customAudio) { if (onEnd) onEnd(); return; }
+        this.clearAudio(); this.isSpeaking = true; document.getElementById('speaking-indicator').style.display = 'block';
+        const audio = new Audio(this.customAudio); audio.volume = 1;
+        audio.onended = () => { this.isSpeaking = false; document.getElementById('speaking-indicator').style.display = 'none'; if (onEnd) onEnd(); };
+        audio.onerror = () => { this.isSpeaking = false; document.getElementById('speaking-indicator').style.display = 'none'; if (onEnd) onEnd(); };
+        audio.play().catch(e => { this.isSpeaking = false; document.getElementById('speaking-indicator').style.display = 'none'; if (onEnd) onEnd(); });
+      }
+      
+      playDigitCall(num) {
+        const digits = num.toString().split('').map(d => parseInt(d));
+        const digitWords = digits.map(d => ["ዜሮ","አንድ","ሁለት","ሶስት","አራት","አምስት","ስድስት","ሰባት","ስምንት","ዘጠኝ"][d] || d).join(' ');
+        const letter = this.getLetterForNumber(num);
+        const letterMap = { B:'ቢ', I:'አይ', N:'ኤን', G:'ጂ', O:'ኦ' };
+        const amLetter = letterMap[letter] || letter;
+        this.speak(`${amLetter} ${digitWords}`, 'am');
+      }
+      
+      getAmharicPronunciation(letter, num, isFirstCall) {
+        const letterMap = {
+          'B': 'ቢ',
+          'I': 'አይ', 
+          'N': 'ኤን',
+          'G': 'ጂ',
+          'O': 'ኦ'
+        };
+        
+        const amLetter = letterMap[letter] || letter;
+        const digits = num.toString().split('').map(d => parseInt(d));
+        const digitWords = digits.map(d => 
+          ["ዜሮ", "አንድ", "ሁለት", "ሶስት", "አራት", "አምስት", "ስድስት", "ሰባት", "ስምንት", "ዘጠኝ"][d] || d
+        ).join(' ');
+        
+        return `${amLetter} ${digitWords}`;
+      }
+      
+      // ENHANCED: Call next number with row avoidance
+      callNextNumber() {
+        if (this.isGameLimitReached()) {
+          this.showGameLimitWarning();
+          return null;
+        }
+        
+        if (this.isSpeaking || this.shuffledNumbers.length === 0) {
+          if (this.shuffledNumbers.length === 0) {
+            this.stopAutoPlay();
+            document.getElementById('status').textContent = 'All numbers called!';
+          }
+          return null;
+        }
+        
+        const num = this.getNextNumber();
+        if (num === null) return null;
+        
+        this.calledNumbers.push(num);
+        this.updateDisplay();
+        this.highlightCalledNumbers();
+        
+        this.showNumberPopup(num);
+        
+        this.playRecordedAudio(num, () => {
+          if (num >= 10 && num <= 75) {
+            setTimeout(() => {
+              if (!this.isSpeaking) this.playDigitCall(num);
+            }, 1800);
+          }
+        });
+        return num;
+      }
+      
+      reset() {
+        if (this.isGameLimitReached()) {
+          this.showGameLimitWarning();
+          return;
+        }
+
+        this.shuffledNumbers = this.enhancedShuffle();
+        this.calledNumbers = [];
+        this.autoPlayReady = false; // Reset the ready flag
+        document.getElementById('status').textContent = 'Game started!';
+        document.getElementById('winner-display').style.display = 'none';
+        this.updateDisplay();
+        this.stopAutoPlay();
+        this.gameRounds++;
+        
+        this.incrementGamesPlayed();
+        
+        this.updateRoundDisplay();
+        document.querySelector('.main-ui').style.display = 'none';
+        document.getElementById('floating-menu').style.display = 'block';
+      }
+      
+      updateRoundDisplay() {
+        document.getElementById('round-btn').textContent = `ROUND: ${this.gameRounds}`;
+      }
+      
+      updateRecentAndReward() {
+        const recentList = document.getElementById('recent-list');
+        if (recentList) {
+          const last5 = this.calledNumbers.slice(-5).reverse();
+          recentList.innerHTML = last5.map(num => {
+            const letter = this.getLetterForNumber(num);
+            return `<div class="recent-badge">${letter}-${num}</div>`;
+          }).join('');
+          const padCount = 5 - last5.length;
+          for (let i = 0; i < padCount; i++) {
+            recentList.innerHTML += '<div class="recent-badge recent-placeholder">–</div>';
+          }
+        }
+        const selectedCount = this.players.length;
+        const totalCost = this.selectedPaymentPerPlayer ? selectedCount * this.selectedPaymentPerPlayer : 0;
+        document.getElementById('cost-display').textContent = `Game Cost: ${totalCost} Birr`;
+        const reward = calculateReward(totalCost, this.rewardPercent);
+        const rewardEl = document.getElementById('reward-amount-inline');
+        if (rewardEl) {
+          rewardEl.textContent = `${reward} Birr`;
+        }
+      }
+      
+      updateFloatingPlayText() {
+        const playBtn = document.getElementById('floating-play-btn');
+        if (playBtn) {
+          playBtn.textContent = this.autoPlaying ? 'STOP' : 'PLAY';
+        }
+      }
+      
+      updateButtonLabels() {
+        const rewardBtn = document.getElementById('reward-percent-btn');
+        if (rewardBtn) {
+          rewardBtn.textContent = `REWARD: ${(this.rewardPercent * 100).toFixed(0)}%`;
+        }
+        
+        const paymentBtn = document.getElementById('payment-btn');
+        if (paymentBtn) {
+          if (this.selectedPaymentPerPlayer) {
+            paymentBtn.textContent = `PAYMENT: ${this.selectedPaymentPerPlayer} Birr`;
+          } else {
+            paymentBtn.textContent = 'PAYMENT';
+          }
+        }
+        
+        const themesBtn = document.getElementById('themes-btn');
+        if (themesBtn) {
+          const currentTheme = THEMES.find(t => t.id === this.currentTheme) || THEMES[0];
+          themesBtn.innerHTML = `🎨 ${currentTheme.name}`;
+        }
+      }
+    }
+    
+    let caller = null;
+    function getCaller() { if (!caller) caller = new BingoCaller(); return caller; }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      const c = getCaller();
+      document.querySelector('.main-ui').style.display = 'none';
+      document.getElementById('floating-menu').style.display = 'block';
+      
+      // NEW: Audio selector button event listener
+      document.getElementById('audio-selector-btn').addEventListener('click', () => {
+        c.showAudioSelectorModal();
+      });
+      
+      // NEW: Close audio selector modal
+      document.getElementById('close-audio-selector-modal').addEventListener('click', () => {
+        c.closeAudioSelectorModal();
+      });
+      
+      // NEW: Close audio selector modal when clicking outside
+      document.getElementById('audio-selector-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          c.closeAudioSelectorModal();
+        }
+      });
+      
+      // NEW: Custom audio file upload
+      document.getElementById('custom-audio-input').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          if (!file.type.startsWith('audio/')) {
+            alert('Please select an audio file');
+            return;
+          }
+          
+          const reader = new FileReader();
+          reader.onload = function(event) {
+            const audioUrl = event.target.result;
+            // For custom audio, we need to specify which number this audio is for
+            const number = prompt('Which number does this audio file represent? (Enter 0-75, or a letter like a, b, c, etc.):');
+            if (number !== null) {
+              c.addCustomAudioFile(number, audioUrl);
+              c.setAudioSet('custom');
+              c.closeAudioSelectorModal();
+              
+              // Play the uploaded audio as test
+              const testAudio = new Audio(audioUrl);
+              testAudio.volume = 0.5;
+              testAudio.play().catch(() => {
+                console.log('Could not play custom audio');
+              });
+            }
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+      
+      // NEW: Custom audio upload area click
+      document.getElementById('custom-audio-upload').addEventListener('click', function() {
+        document.getElementById('custom-audio-input').click();
+      });
+      
+      document.getElementById('popup-close-btn').addEventListener('click', () => {
+        c.hideNumberPopup();
+      });
+      
+      // NEW: Add event listener for floating menu button
+      document.getElementById('floating-menu-btn').addEventListener('click', () => {
+        document.getElementById('floating-menu').style.display = 'block';
+      });
+      
+      // NEW: Add event listener for small game limit button
+      document.getElementById('game-limit-btn-small').addEventListener('click', () => {
+        c.handleGameLimitButtonClick();
+      });
+      
+      // NEW: Add event listener for game limit password verification
+      document.getElementById('game-limit-password-submit').addEventListener('click', () => {
+        c.verifyGameLimitAccessKey();
+      });
+      
+      // NEW: Add Enter key support for game limit password input
+      document.getElementById('game-limit-password-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          c.verifyGameLimitAccessKey();
+        }
+      });
+      
+      // NEW: Close game limit password modal
+      document.getElementById('game-limit-password-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          c.hideGameLimitPasswordModal();
+        }
+      });
+      
+      // NEW: Add event listener for refresh button
+      document.getElementById('refresh-btn').addEventListener('click', () => {
+        c.refresh();
+      });
+      
+      // NEW: Add event listener for themes button
+      document.getElementById('themes-btn').addEventListener('click', () => {
+        c.showThemesModal();
+      });
+      
+      // NEW: Close themes modal
+      document.getElementById('close-themes-modal').addEventListener('click', () => {
+        c.closeThemesModal();
+      });
+      
+      // NEW: Close themes modal when clicking outside
+      document.getElementById('themes-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          c.closeThemesModal();
+        }
+      });
+      
+      // NEW: Close game limit modal
+      document.getElementById('close-game-limit-modal').addEventListener('click', () => {
+        document.getElementById('game-limit-modal').style.display = 'none';
+      });
+      
+      // NEW: Set game limit button
+      document.getElementById('set-game-limit-btn').addEventListener('click', () => {
+        const gamesInput = document.getElementById('game-limit-input');
+        const games = parseInt(gamesInput.value);
+        if (isNaN(games) || games < 1) {
+          alert('Please enter a valid number of games (minimum 1)');
+          return;
+        }
+        if (c.setGameLimit(games)) {
+          updateGameLimitStatus();
+        }
+      });
+      
+      // NEW: Reset games count button
+      document.getElementById('reset-games-count-btn').addEventListener('click', () => {
+        if (c.resetGamesPlayed()) {
+          updateGameLimitStatus();
+        }
+      });
+      
+      // NEW: Predefined game limit packages
+      document.querySelectorAll('.game-limit-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const games = parseInt(btn.dataset.games);
+          if (c.setGameLimit(games)) {
+            updateGameLimitStatus();
+          }
+        });
+      });
+      
+      // NEW: Function to update game limit status display
+      function updateGameLimitStatus() {
+        const statusEl = document.getElementById('current-games-status');
+        if (c.maxGames === null) {
+          statusEl.innerHTML = `
+            <strong>Unlimited Games</strong><br>
+            Games Played: ${c.gamesPlayed}<br>
+            No limit set
+          `;
+        } else {
+          const gamesLeft = Math.max(0, c.maxGames - c.gamesPlayed);
+          statusEl.innerHTML = `
+            <strong>Game Limit: ${c.maxGames} games</strong><br>
+            Games Played: ${c.gamesPlayed}<br>
+            Games Left: ${gamesLeft}
+          `;
+        }
+      }
+      
+      document.getElementById('players-btn').addEventListener('click', () => {
+        document.getElementById('players-fullscreen-modal').style.display = 'flex';
+        c.updateFullScreenPlayerCount();
+      });
+      
+      document.getElementById('close-players-fullscreen-modal').addEventListener('click', () => {
+        document.getElementById('players-fullscreen-modal').style.display = 'none';
+      });
+      
+      document.getElementById('select-all-players').addEventListener('click', () => {
+        c.selectAllPlayers();
+      });
+      
+      document.getElementById('deselect-all-players').addEventListener('click', () => {
+        c.deselectAllPlayers();
+      });
+      
+      document.getElementById('clear-all-players').addEventListener('click', () => {
+        c.clearAllPlayers();
+      });
+      
+      document.getElementById('select-all-players-float').addEventListener('click', () => {
+        document.querySelectorAll('.player-circle').forEach(circle => {
+          circle.classList.add('selected');
+        });
+        c.updatePlayersFromSelection();
+      });
+      
+      document.getElementById('player-card-btn').addEventListener('click', () => {
+        document.getElementById('player-card-modal').style.display = 'flex';
+      });
+      
+      document.getElementById('close-player-card-modal').addEventListener('click', () => {
+        document.getElementById('player-card-modal').style.display = 'none';
+      });
+      
+      document.getElementById('view-player-card').addEventListener('click', () => {
+        const playerId = parseInt(document.getElementById('player-card-input').value);
+        if (isNaN(playerId) || playerId < 1 || playerId > 150) {
+          alert('Please enter a valid player ID (1-150)');
+          return;
+        }
+        c.showPlayerCard(playerId);
+      });
+      
+      document.getElementById('winning-rule-btn').addEventListener('click', () => {
+        document.getElementById('winning-rule-modal').style.display = 'flex';
+      });
+      
+      document.getElementById('voice-settings-btn').addEventListener('click', () => {
+        document.getElementById('voice-settings-modal').style.display = 'flex';
+      });
+      
+      document.getElementById('speed-settings-btn').addEventListener('click', () => {
+        document.getElementById('speed-settings-modal').style.display = 'flex';
+        
+        const speedOptionsContainer = document.getElementById('speed-options');
+        speedOptionsContainer.innerHTML = '';
+        SPEED_PRESETS.forEach(preset => {
+          const btn = document.createElement('button');
+          btn.className = 'speed-option-btn';
+          if (c.autoIntervalMs === preset.value) {
+            btn.classList.add('selected');
+          }
+          btn.textContent = preset.label;
+          btn.dataset.speed = preset.value;
+          btn.addEventListener('click', () => {
+            c.setSpeedPreset(preset.value);
+          });
+          speedOptionsContainer.appendChild(btn);
+        });
+      });
+      
+      document.getElementById('close-speed-settings-modal').addEventListener('click', () => {
+        document.getElementById('speed-settings-modal').style.display = 'none';
+      });
+      
+      document.getElementById('close-winning-rule-modal').addEventListener('click', () => {
+        document.getElementById('winning-rule-modal').style.display = 'none';
+      });
+      
+      document.getElementById('close-voice-settings-modal').addEventListener('click', () => {
+        document.getElementById('voice-settings-modal').style.display = 'none';
+      });
+      
+      document.querySelectorAll('#winning-rule-content .modal-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+          c.winningRule = btn.dataset.rule;
+          c.saveSetting('bingoWinningRule', c.winningRule);
+          document.getElementById('winning-rule-modal').style.display = 'none';
+        });
+      });
+      
+      document.getElementById('new-game').addEventListener('click', () => c.reset());
+      
+      document.getElementById('auto-btn').addEventListener('click', () => c.toggleAutoPlay());
+      
+      document.getElementById('can-player-win-btn').addEventListener('click', () => {
+        if (c.players.length === 0) { alert('Please select players first (via ⚙️ menu)'); return; }
+        const list = c.players.map(p => p.id).join(', ');
+        const pid = prompt(`Enter player (1–150)\nSelected: ${list}`);
+        if (pid === null) return;
+        const id = parseInt(pid.trim());
+        if (isNaN(id) || id < 1 || id > 150) { alert("Please enter valid number (1–150)"); return; }
+        c.checkIfPlayerCanWin(id);
+      });
+      document.getElementById('increase-interval').addEventListener('click', () => c.increaseInterval());
+      document.getElementById('decrease-interval').addEventListener('click', () => c.decreaseInterval());
+      
+      document.getElementById('floating-play-btn').addEventListener('click', () => {
+        if (c.players.length === 0) {
+          alert('Please select at least one player before starting the game.');
+          return;
+        }
+        document.getElementById('floating-menu').style.display = 'none';
+        document.querySelector('.main-ui').style.display = 'block';
+      });
+      
+      // NEW: Floating menu button event listener
+      document.getElementById('floating-menu-btn').addEventListener('click', () => {
+        document.getElementById('floating-menu').style.display = 'block';
+      });
+      
+      document.getElementById('close-floating-menu').addEventListener('click', () => {
+        document.getElementById('floating-menu').style.display = 'none';
+      });
+      
+      // Manual Card Input Functionality
+      document.getElementById('manual-card-btn').addEventListener('click', () => {
+        document.getElementById('manual-card-modal').style.display = 'flex';
+      });
+      
+      document.getElementById('manual-card-btn-float').addEventListener('click', () => {
+        document.getElementById('manual-card-modal').style.display = 'flex';
+      });
+      
+      document.getElementById('close-manual-card-modal').addEventListener('click', () => {
+        document.getElementById('manual-card-modal').style.display = 'none';
+      });
+      
+      document.getElementById('save-manual-card').addEventListener('click', () => {
+        const playerId = parseInt(document.getElementById('manual-player-id').value);
+        if (isNaN(playerId) || playerId < 1 || playerId > 150) {
+          alert('Please enter a valid player ID (1-150)');
+          return;
+        }
+        
+        // Get all input values
+        const cardData = [
+          [
+            parseInt(document.getElementById('b1').value) || 0,
+            parseInt(document.getElementById('i1').value) || 0,
+            parseInt(document.getElementById('n1').value) || 0,
+            parseInt(document.getElementById('g1').value) || 0,
+            parseInt(document.getElementById('o1').value) || 0
+          ],
+          [
+            parseInt(document.getElementById('b2').value) || 0,
+            parseInt(document.getElementById('i2').value) || 0,
+            parseInt(document.getElementById('n2').value) || 0,
+            parseInt(document.getElementById('g2').value) || 0,
+            parseInt(document.getElementById('o2').value) || 0
+          ],
+          [
+            parseInt(document.getElementById('b3').value) || 0,
+            parseInt(document.getElementById('i3').value) || 0,
+            "FREE",
+            parseInt(document.getElementById('g3').value) || 0,
+            parseInt(document.getElementById('o3').value) || 0
+          ],
+          [
+            parseInt(document.getElementById('b4').value) || 0,
+            parseInt(document.getElementById('i4').value) || 0,
+            parseInt(document.getElementById('n4').value) || 0,
+            parseInt(document.getElementById('g4').value) || 0,
+            parseInt(document.getElementById('o4').value) || 0
+          ],
+          [
+            parseInt(document.getElementById('b5').value) || 0,
+            parseInt(document.getElementById('i5').value) || 0,
+            parseInt(document.getElementById('n5').value) || 0,
+            parseInt(document.getElementById('g5').value) || 0,
+            parseInt(document.getElementById('o5').value) || 0
+          ]
+        ];
+        
+        // Validate the card data
+        let isValid = true;
+        let errorMessage = '';
+        
+        // Check B column (1-15)
+        for (let i = 0; i < 5; i++) {
+          if (i !== 2 && (cardData[i][0] < 1 || cardData[i][0] > 15)) {
+            isValid = false;
+            errorMessage = `Invalid value in B column, row ${i+1}. Must be between 1-15.`;
+            break;
+          }
+        }
+        
+        // Check I column (16-30)
+        if (isValid) {
+          for (let i = 0; i < 5; i++) {
+            if (i !== 2 && (cardData[i][1] < 16 || cardData[i][1] > 30)) {
+              isValid = false;
+              errorMessage = `Invalid value in I column, row ${i+1}. Must be between 16-30.`;
+              break;
+            }
+          }
+        }
+        
+        // Check N column (31-45)
+        if (isValid) {
+          for (let i = 0; i < 5; i++) {
+            if (i !== 2 && (cardData[i][2] < 31 || cardData[i][2] > 45)) {
+              isValid = false;
+              errorMessage = `Invalid value in N column, row ${i+1}. Must be between 31-45.`;
+              break;
+            }
+          }
+        }
+        
+        // Check G column (46-60)
+        if (isValid) {
+          for (let i = 0; i < 5; i++) {
+            if (i !== 2 && (cardData[i][3] < 46 || cardData[i][3] > 60)) {
+              isValid = false;
+              errorMessage = `Invalid value in G column, row ${i+1}. Must be between 46-60.`;
+              break;
+            }
+          }
+        }
+        
+        // Check O column (61-75)
+        if (isValid) {
+          for (let i = 0; i < 5; i++) {
+            if (i !== 2 && (cardData[i][4] < 61 || cardData[i][4] > 75)) {
+              isValid = false;
+              errorMessage = `Invalid value in O column, row ${i+1}. Must be between 61-75.`;
+              break;
+            }
+          }
+        }
+        
+        if (isValid) {
+          c.saveManualCard(playerId, cardData);
+          const statusEl = document.getElementById('manual-card-status');
+          statusEl.textContent = `✅ Player ${playerId} card saved successfully!`;
+          statusEl.style.background = 'linear-gradient(to right, #2ecc71, #27ae60)';
+          statusEl.style.color = 'white';
+          statusEl.style.display = 'block';
+          
+          // Clear the form
+          setTimeout(() => {
+            document.getElementById('manual-player-id').value = '';
+            document.querySelectorAll('.card-input-cell input').forEach(input => {
+              input.value = '';
+            });
+            statusEl.style.display = 'none';
+          }, 3000);
+        } else {
+          const statusEl = document.getElementById('manual-card-status');
+          statusEl.textContent = `❌ ${errorMessage}`;
+          statusEl.style.background = 'linear-gradient(to right, #e74c3c, #c0392b)';
+          statusEl.style.color = 'white';
+          statusEl.style.display = 'block';
+        }
+      });
+      
+      document.getElementById('clear-manual-card').addEventListener('click', () => {
+        document.getElementById('manual-player-id').value = '';
+        document.querySelectorAll('.card-input-cell input').forEach(input => {
+          input.value = '';
+        });
+        document.getElementById('manual-card-status').style.display = 'none';
+      });
+      
+      const paymentOptionsContainer = document.getElementById('payment-options');
+      PAYMENT_AMOUNTS.forEach(amount => {
+        const btn = document.createElement('button');
+        btn.className = 'payment-option-btn';
+        btn.textContent = `+${amount} Birr`;
+        btn.dataset.amount = amount;
+        btn.addEventListener('click', () => {
+          c.selectedPaymentPerPlayer = amount;
+          c.saveSetting('bingoPaymentAmount', amount);
+          c.updateRecentAndReward();
+          c.updateButtonLabels();
+          document.getElementById('payment-modal').style.display = 'none';
+        });
+        paymentOptionsContainer.appendChild(btn);
+      });
+      
+      document.getElementById('payment-btn').addEventListener('click', () => {
+        document.getElementById('payment-modal').style.display = 'flex';
+      });
+      
+      document.getElementById('close-payment-modal').addEventListener('click', () => {
+        document.getElementById('payment-modal').style.display = 'none';
+      });
+      
+      const rewardPercentOptionsContainer = document.getElementById('reward-percent-options');
+      REWARD_PERCENTAGES.forEach(percent => {
+        const btn = document.createElement('button');
+        btn.className = 'reward-percent-btn';
+        btn.textContent = `${(percent * 100).toFixed(0)}%`;
+        btn.dataset.percent = percent;
+        btn.addEventListener('click', () => {
+          c.rewardPercent = parseFloat(percent);
+          c.saveSetting('bingoRewardPercent', percent);
+          c.updateRecentAndReward();
+          c.updateButtonLabels();
+          document.getElementById('reward-percent-modal').style.display = 'none';
+        });
+        rewardPercentOptionsContainer.appendChild(btn);
+      });
+      
+      document.getElementById('reward-percent-btn').addEventListener('click', () => {
+        document.getElementById('reward-percent-modal').style.display = 'flex';
+      });
+      
+      document.getElementById('close-reward-percent-modal').addEventListener('click', () => {
+        document.getElementById('reward-percent-modal').style.display = 'none';
+      });
+      
+      document.getElementById('language-select-float').addEventListener('change', e => {
+        c.preferredLanguage = e.target.value;
+      });
+      
+      document.getElementById('voice-type-select-float').addEventListener('change', e => {
+        c.selectedVoiceURI = e.target.value;
+      });
+      
+      document.getElementById('show-reward-btn').addEventListener('click', () => {
+        const selectedCount = c.players.length;
+        const totalCost = c.selectedPaymentPerPlayer ? selectedCount * c.selectedPaymentPerPlayer : 0;
+        const reward = calculateReward(totalCost, c.rewardPercent);
+        document.getElementById('reward-amount').textContent = `${reward} Birr`;
+        document.getElementById('reward-modal').style.display = 'flex';
+      });
+      
+      document.getElementById('close-reward-modal').addEventListener('click', () => {
+        document.getElementById('reward-modal').style.display = 'none';
+      });
+      
+      document.getElementById('clear-audio-btn-float').addEventListener('click', () => {
+        c.clearAudio();
+        const btn = document.getElementById('clear-audio-btn-float');
+        const orig = btn.textContent;
+        btn.textContent = 'Cleared! ✅';
+        setTimeout(() => btn.textContent = orig, 1000);
+      });
+      document.getElementById('trigger-audio-file').addEventListener('click', () => {
+        document.getElementById('audio-file-input-float').click();
+      });
+      document.getElementById('audio-file-input-float').addEventListener('change', e => {
+        const file = e.target.files[0]; if (file) c.loadCustomAudio(file);
+      });
+      document.getElementById('install-amharic-btn-float').addEventListener('click', () => {
+        document.getElementById('voice-install-modal').style.display = 'flex';
+      });
+      document.getElementById('close-modal').addEventListener('click', () => {
+        document.getElementById('voice-install-modal').style.display = 'none';
+      });
+      
+      if (typeof speechSynthesis !== 'undefined') {
+        speechSynthesis.onvoiceschanged = () => {
+          const realAmharicVoices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('am') && !v.voiceURI.includes('proxy'));
+          document.getElementById('install-amharic-btn-float').style.display = realAmharicVoices.length === 0 ? 'block' : 'none';
+        };
+        setTimeout(() => {
+          const realAmharicVoices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('am') && !v.voiceURI.includes('proxy'));
+          document.getElementById('install-amharic-btn-float').style.display = realAmharicVoices.length === 0 ? 'block' : 'none';
+        }, 1500);
+      }
+    });
+  </script>
+</body>
+</html>
