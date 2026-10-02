@@ -23,7 +23,7 @@
 
         /* main card – anonymous group message style */
         .message-card {
-            max-width: 680px;
+            max-width: 780px;
             width: 100%;
             background: rgba(22, 27, 38, 0.85);
             backdrop-filter: blur(12px);
@@ -163,14 +163,19 @@
             margin-top: 2px;
         }
 
-        /* big good bye text */
-        .goodbye-container {
-            text-align: center;
+        /* ===== GOODBYE + EXTRA MESSAGE WRAPPER ===== */
+        .goodbye-block {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 20px 28px;
             padding: 8px 0 18px;
+            text-align: left;
         }
 
         .goodbye-main {
-            font-size: clamp(3.2rem, 15vw, 5.2rem);
+            font-size: clamp(2.6rem, 12vw, 4.4rem);
             font-weight: 800;
             letter-spacing: -0.03em;
             line-height: 1.05;
@@ -179,8 +184,8 @@
             background-clip: text;
             color: transparent;
             text-shadow: 0 0 30px rgba(130, 170, 255, 0.4), 0 10px 30px -10px #00000080;
-            margin-bottom: 12px;
             animation: pulseGlow 3s infinite alternate;
+            white-space: nowrap;
         }
 
         @keyframes pulseGlow {
@@ -194,8 +199,51 @@
             }
         }
 
+        /* extra anonymous message next to GOODBYE */
+        .extra-message {
+            font-size: 0.95rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            line-height: 1.45;
+            color: #f0d68a;
+            background: rgba(255, 215, 130, 0.07);
+            padding: 14px 22px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 215, 130, 0.25);
+            box-shadow: 0 0 22px -8px rgba(255, 200, 90, 0.5);
+            max-width: 360px;
+            text-align: left;
+            backdrop-filter: blur(4px);
+            animation: extraPulse 2.4s infinite alternate;
+            word-break: break-word;
+        }
+
+        @keyframes extraPulse {
+            0% {
+                border-color: rgba(255, 215, 130, 0.25);
+                box-shadow: 0 0 18px -8px rgba(255, 200, 90, 0.4);
+            }
+            100% {
+                border-color: rgba(255, 225, 150, 0.6);
+                box-shadow: 0 0 34px -6px rgba(255, 210, 110, 0.8);
+            }
+        }
+
+        .extra-message .highlight {
+            color: #ffd966;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        /* subtle wrapper for goodbye sub if needed */
+        .goodbye-sub-wrapper {
+            text-align: center;
+            padding-bottom: 8px;
+        }
+
         .goodbye-sub {
-            font-size: 1.1rem;
+            font-size: 1rem;
             color: #9daabf;
             letter-spacing: 0.3px;
             font-weight: 400;
@@ -210,7 +258,7 @@
 
         /* anonymous group message footer */
         .message-footer {
-            margin-top: 38px;
+            margin-top: 32px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -218,11 +266,14 @@
             border-top: 1px solid rgba(255, 255, 255, 0.05);
             color: #5f6c82;
             font-size: 0.8rem;
+            flex-wrap: wrap;
+            gap: 12px;
         }
 
         .reactions {
             display: flex;
             gap: 18px;
+            flex-wrap: wrap;
         }
 
         .reaction-item {
@@ -252,15 +303,32 @@
             color: #8896b0;
             border: 1px solid #2d3547;
             letter-spacing: 0.02em;
+            white-space: nowrap;
         }
 
         .anonymous-mark svg {
             width: 14px;
             height: 14px;
             fill: #8896b0;
+            flex-shrink: 0;
         }
 
         /* responsive */
+        @media (max-width: 700px) {
+            .goodbye-block {
+                flex-direction: column;
+                text-align: center;
+                gap: 16px;
+            }
+
+            .extra-message {
+                max-width: 100%;
+                text-align: center;
+                font-size: 0.9rem;
+                padding: 12px 18px;
+            }
+        }
+
         @media (max-width: 480px) {
             .message-card {
                 padding: 1.8rem 1.2rem;
@@ -280,14 +348,17 @@
                 font-size: 18px;
             }
 
+            .goodbye-main {
+                font-size: clamp(2.2rem, 12vw, 3rem);
+            }
+
             .goodbye-sub {
-                font-size: 0.9rem;
-                padding: 6px 18px;
+                font-size: 0.85rem;
+                padding: 6px 16px;
             }
 
             .message-footer {
                 flex-direction: column;
-                gap: 16px;
                 align-items: flex-start;
             }
         }
@@ -324,9 +395,16 @@
             </div>
         </div>
 
-        <!-- BIG GOOD BYE TEXT (with anonymous group message) -->
-        <div class="goodbye-container">
+        <!-- ===== GOODBYE + EXTRA MESSAGE (ELIAYS I CAN DAMAGE YOU TV OK PAY MY MONEY) ===== -->
+        <div class="goodbye-block">
             <div class="goodbye-main">GOOD BYE</div>
+            <div class="extra-message">
+                <span class="highlight">ELIAYS</span> I CAN DAMAGE YOU TV OK PAY MY MONEY
+            </div>
+        </div>
+
+        <!-- small subline (optional) -->
+        <div class="goodbye-sub-wrapper">
             <div class="goodbye-sub">👋 from the anonymous group</div>
         </div>
 
